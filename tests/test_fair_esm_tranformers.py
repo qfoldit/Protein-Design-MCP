@@ -77,89 +77,89 @@ class FairESMFoldRunner:
         self._model = None
 
     def _load_model(self):
-    """Load ESMFold model with IPA-key compatibility shim for esmfold_3B_v1."""
-    if self._model is None:
-        try:
-            import sys
-            import types
-            import torch
-
-            if "attn_core_inplace_cuda" not in sys.modules:
-                sys.modules["attn_core_inplace_cuda"] = types.ModuleType(
-                    "attn_core_inplace_cuda"
-                )
-
-            import esm
-            import esm.esmfold.v1.pretrained as _esm_pretrained
-
-            _orig_load = _esm_pretrained._load_model
-
-            def _patched_load(model_name: str):
-                from esm.esmfold.v1 import ESMFold
-
-                url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
-                model_data = torch.hub.load_state_dict_from_url(
-                    url,
-                    map_location="cpu",
-                    weights_only=False,  # cfg is omegaconf.DictConfig, not a plain tensor
-                )
-
-                cfg = model_data["cfg"]["model"]
-                old_state = model_data["model"]
-
-                # esmfold_3B_v1 stores IPA point projections as bare nn.Linear
-                # (no .linear. infix); current fair-esm wraps them in a submodule.
-                # Confirmed by key inspection: the 4 affected keys are:
-                #   linear_kv_points.{weight,bias}  →  linear_kv_points.linear.{weight,bias}
-                #   linear_q_points.{weight,bias}   →  linear_q_points.linear.{weight,bias}
-                # linear_kv.{weight,bias} is a separate module and maps fine as-is.
-                remap = {
-                    "trunk.structure_module.ipa.linear_kv_points.weight":
-                        "trunk.structure_module.ipa.linear_kv_points.linear.weight",
-                    "trunk.structure_module.ipa.linear_kv_points.bias":
-                        "trunk.structure_module.ipa.linear_kv_points.linear.bias",
-                    "trunk.structure_module.ipa.linear_q_points.weight":
-                        "trunk.structure_module.ipa.linear_q_points.linear.weight",
-                    "trunk.structure_module.ipa.linear_q_points.bias":
-                        "trunk.structure_module.ipa.linear_q_points.linear.bias",
-                }
-                new_state = {remap.get(k, k): v for k, v in old_state.items()}
-
-                model = ESMFold(esmfold_config=cfg)
-                missing, unexpected = model.load_state_dict(new_state, strict=False)
-
-                # After the remap there should be nothing essential missing.
-                # Surface any residual gaps rather than silently corrupting inference.
-                if missing:
-                    import warnings
-                    warnings.warn(
-                        f"[FairESMFold] Still-missing keys after IPA remap "
-                        f"(first 5): {missing[:5]}"
-                    )
-                return model
-
-            _esm_pretrained._load_model = _patched_load
+        """Load ESMFold model with IPA-key compatibility shim for esmfold_3B_v1."""
+        if self._model is None:
             try:
-                self._model = esm.pretrained.esmfold_v1()
-            finally:
-                _esm_pretrained._load_model = _orig_load  # restore unconditionally
+                import sys
+                import types
+                import torch
 
-            self._model = self._model.eval()
+                if "attn_core_inplace_cuda" not in sys.modules:
+                    sys.modules["attn_core_inplace_cuda"] = types.ModuleType(
+                        "attn_core_inplace_cuda"
+                    )
 
-            if self.config.device == "cuda" and torch.cuda.is_available():
-                self._model = self._model.cuda()
+                import esm
+                import esm.esmfold.v1.pretrained as _esm_pretrained
 
-            if self.config.chunk_size:
-                self._model.set_chunk_size(self.config.chunk_size)
+                _orig_load = _esm_pretrained._load_model
 
-        except ImportError as e:
-            raise ESMFoldError(
-                "ESMFold requires 'esm' package. Install with: pip install fair-esm"
-            ) from e
-        except Exception as e:
-            raise ESMFoldError(f"Failed to load ESMFold model: {e}") from e
+                def _patched_load(model_name: str):
+                    from esm.esmfold.v1 import ESMFold
 
-    return self._model
+                    url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
+                    model_data = torch.hub.load_state_dict_from_url(
+                        url,
+                        map_location="cpu",
+                        weights_only=False,  # cfg is omegaconf.DictConfig, not a plain tensor
+                    )
+
+                    cfg = model_data["cfg"]["model"]
+                    old_state = model_data["model"]
+
+                    # esmfold_3B_v1 stores IPA point projections as bare nn.Linear
+                    # (no .linear. infix); current fair-esm wraps them in a submodule.
+                    # Confirmed by key inspection: the 4 affected keys are:
+                    #   linear_kv_points.{weight,bias}  →  linear_kv_points.linear.{weight,bias}
+                    #   linear_q_points.{weight,bias}   →  linear_q_points.linear.{weight,bias}
+                    # linear_kv.{weight,bias} is a separate module and maps fine as-is.
+                    remap = {
+                        "trunk.structure_module.ipa.linear_kv_points.weight":
+                            "trunk.structure_module.ipa.linear_kv_points.linear.weight",
+                        "trunk.structure_module.ipa.linear_kv_points.bias":
+                            "trunk.structure_module.ipa.linear_kv_points.linear.bias",
+                        "trunk.structure_module.ipa.linear_q_points.weight":
+                            "trunk.structure_module.ipa.linear_q_points.linear.weight",
+                        "trunk.structure_module.ipa.linear_q_points.bias":
+                            "trunk.structure_module.ipa.linear_q_points.linear.bias",
+                    }
+                    new_state = {remap.get(k, k): v for k, v in old_state.items()}
+
+                    model = ESMFold(esmfold_config=cfg)
+                    missing, unexpected = model.load_state_dict(new_state, strict=False)
+
+                    # After the remap there should be nothing essential missing.
+                    # Surface any residual gaps rather than silently corrupting inference.
+                    if missing:
+                        import warnings
+                        warnings.warn(
+                            f"[FairESMFold] Still-missing keys after IPA remap "
+                            f"(first 5): {missing[:5]}"
+                        )
+                    return model
+
+                _esm_pretrained._load_model = _patched_load
+                try:
+                    self._model = esm.pretrained.esmfold_v1()
+                finally:
+                    _esm_pretrained._load_model = _orig_load  # restore unconditionally
+
+                self._model = self._model.eval()
+
+                if self.config.device == "cuda" and torch.cuda.is_available():
+                    self._model = self._model.cuda()
+
+                if self.config.chunk_size:
+                    self._model.set_chunk_size(self.config.chunk_size)
+
+            except ImportError as e:
+                raise ESMFoldError(
+                    "ESMFold requires 'esm' package. Install with: pip install fair-esm"
+                ) from e
+            except Exception as e:
+                raise ESMFoldError(f"Failed to load ESMFold model: {e}") from e
+
+        return self._model
 
     def _validate_sequence(self, sequence: str) -> bool:
         """
