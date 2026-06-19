@@ -140,3 +140,6 @@ addopts = "-v --tb=short"
 
 [tool.uv.sources]
 openfold = { git = "https://github.com/aqlaboratory/openfold.git" }
+
+[tool.uv.extra-build-dependencies]
+openfold = ["torch"]
