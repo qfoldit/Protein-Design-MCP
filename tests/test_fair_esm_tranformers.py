@@ -95,7 +95,7 @@ class FairESMFoldRunner:
                 _orig_load = _esm_pretrained._load_model
 
                 def _patched_load(model_name: str):
-                    from esm.esmfold.v1 import ESMFold
+                    from esm.esmfold.v1.esmfold import ESMFold
 
                     url = f"https://dl.fbaipublicfiles.com/fair-esm/models/{model_name}.pt"
                     model_data = torch.hub.load_state_dict_from_url(
