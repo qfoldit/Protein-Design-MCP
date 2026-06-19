@@ -30,7 +30,7 @@ def _default_device() -> str:
 class ESM2ScorerConfig:
     """Configuration for ESM2 scoring."""
 
-    model_name: str = os.environ.get("ESM2_MODEL", "esm2_t33_650M_UR50D")
+    model_name: str = os.environ.get("ESM2_MODEL", "facebook/esm2_t33_650M_UR50D")
     device: str | None = None
 
     def __post_init__(self):
@@ -63,17 +63,18 @@ class ESM2Scorer:
             return
 
         import torch
-        import esm
+        from transformers import AutoTokenizer, EsmForMaskedLM
 
-        model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
+        # Load standard HF tokenizer and the Masked Language Model variant
+        tokenizer = AutoTokenizer.from_pretrained(self.config.model_name)
+        model = EsmForMaskedLM.from_pretrained(self.config.model_name)
         model = model.eval()
 
         if self.config.device == "cuda" and torch.cuda.is_available():
-            model = model.cuda()
+            model = model.to("cuda")
 
         self._model = model
-        self._alphabet = alphabet
-        self._batch_converter = alphabet.get_batch_converter()
+        self._tokenizer = tokenizer
 
     # ------------------------------------------------------------------
     # Public API
@@ -83,7 +84,7 @@ class ESM2Scorer:
         """Compute wildtype marginal log-likelihood for a protein sequence.
 
         Single forward pass: run the unmasked sequence through ESM-2 and
-        collect log P(true_aa | context) at each position.  This is ~L×
+        collect log P(true_aa | context) at each position. This is ~L×
         faster than masked marginal scoring while correlating well with it
         for mutation scanning (Meier et al., 2021).
 
@@ -103,27 +104,31 @@ class ESM2Scorer:
 
         self._load_model()
 
-        data = [("protein", sequence)]
-        _, _, batch_tokens = self._batch_converter(data)
+        # Tokenize using Hugging Face (adds special tokens <cls>/BOS and <eos> automatically)
+        inputs = self._tokenizer([sequence], return_tensors="pt")
+        batch_tokens = inputs["input_ids"]
 
         if self.config.device == "cuda" and torch.cuda.is_available():
-            batch_tokens = batch_tokens.cuda()
+            batch_tokens = batch_tokens.to("cuda")
 
         with torch.no_grad():
             # Single forward pass — no masking
-            logits = self._model(batch_tokens)["logits"]  # (1, L+2, vocab)
-            # Extract positions 1..L (skip BOS at 0, EOS at L+1)
-            seq_logits = logits[0, 1 : len(sequence) + 1]  # (L, vocab)
-            log_probs = torch.log_softmax(seq_logits, dim=-1)  # (L, vocab)
+            outputs = self._model(batch_tokens)
+            logits = outputs.logits  # (1, L+2, vocab_size)
+            
+            # Extract positions 1..L (skip BOS/cls at 0, EOS at L+1)
+            seq_logits = logits[0, 1 : len(sequence) + 1]  # (L, vocab_size)
+            log_probs = torch.log_softmax(seq_logits, dim=-1)  # (L, vocab_size)
 
         # Per-residue score: log P(true_aa | context)
         per_residue: list[float] = []
         for i, aa in enumerate(sequence):
-            token_idx = self._alphabet.get_idx(aa)
+            # Resolve the numeric token ID via the Hugging Face tokenizer mapping
+            token_idx = self._tokenizer.convert_tokens_to_ids(aa)
             per_residue.append(log_probs[i, token_idx].item())
 
         # Extract logits for the 20 standard AAs (for fast mutation scanning)
-        aa_indices = [self._alphabet.get_idx(aa) for aa in "ACDEFGHIKLMNPQRSTVWY"]
+        aa_indices = [self._tokenizer.convert_tokens_to_ids(aa) for aa in "ACDEFGHIKLMNPQRSTVWY"]
         aa_log_probs = log_probs[:, aa_indices].cpu().numpy()  # (L, 20)
 
         mean_score = float(np.mean(per_residue))
@@ -134,7 +139,6 @@ class ESM2Scorer:
             "aa_log_probs": aa_log_probs,  # (L, 20) for fast mutation scan
             "sequence_length": len(sequence),
         }
-
     async def score_mutations(
         self,
         sequence: str,
