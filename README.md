@@ -1,5 +1,110 @@
 # Protein Design MCP Server
+```
+qfoldit-protein-design-mcp/
 
+
+├── README.md
+├── LICENSE
+├── pyproject.toml
+├── docker-compose.yml
+├── Dockerfile
+
+
+│
+├── server/
+│
+│   ├── main.py
+│   ├── mcp_server.py
+│   ├── registry.py
+│   └── config.py
+│
+
+
+│
+├── agents/
+│
+│   ├── protein_engineer.py
+│   ├── binder_designer.py
+│   ├── validator.py
+│   ├── optimizer.py
+│   └── scientific_planner.py
+│
+
+
+│
+├── workflows/
+│
+│   ├── protein_design.py
+│   ├── binder_design.py
+│   ├── mutation_scan.py
+│   ├── affinity_optimization.py
+│   └── digital_twin.py
+│
+
+
+│
+├── adapters/
+│
+│   ├── rfdiffusion3/
+│   │
+│   ├── proteinmpnn/
+│   │
+│   ├── boltz2/
+│   │
+│   ├── openfold3/
+│   │
+│   ├── esmfold/
+│   │
+│   ├── diffdock/
+│   │
+│   ├── openmm/
+│   │
+│   └── pyrosetta/
+│
+
+
+│
+├── tools/
+│
+│   ├── structure_analysis.py
+│   ├── sequence_design.py
+│   ├── docking.py
+│   ├── scoring.py
+│   └── visualization.py
+│
+
+
+│
+├── data/
+│
+│   ├── templates/
+│   ├── examples/
+│   └── schemas/
+│
+
+
+│
+├── visualization/
+│
+│   ├── usd_export.py
+│   ├── nanover.py
+│   └── omniverse.py
+│
+
+
+│
+├── skills/
+│
+│   ├── protein-design/
+│   ├── drug-discovery/
+│   └── structural-biology/
+│
+
+
+│
+└── tests/
+
+```
 [![PyPI](https://img.shields.io/pypi/v/protein-design-mcp)](https://pypi.org/project/protein-design-mcp/)
 [![Docker Hub](https://img.shields.io/docker/v/jeonghyeonkim8652/protein-design-mcp?label=docker%20hub&logo=docker)](https://hub.docker.com/r/jeonghyeonkim8652/protein-design-mcp)
 [![GHCR](https://img.shields.io/badge/ghcr.io-protein--design--mcp-blue?logo=github)](https://github.com/jasonkim8652/protein-design-mcp/pkgs/container/protein-design-mcp)
