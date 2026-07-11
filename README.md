@@ -1,110 +1,31 @@
-# Protein Design MCP Server
+# qFoldIT Protein Design MCP
+
+**This repository has two parts under two different licenses — see `NOTICE` for full attribution.**
+
+1. **The MCP server** (this directory, outside `claude-skills/`) — Apache-2.0, based on [jasonkim8652/protein-design-mcp](https://github.com/jasonkim8652/protein-design-mcp). Currently unmodified from upstream; installation below correctly points to the upstream project's own PyPI/Docker/GitHub since qFoldIT has not yet published an independent build.
+2. **`claude-skills/`** — MIT, originally authored by qFoldIT: 20 Claude Skills covering scientific simulation (VQE, protein folding, bio-mining, corrosion, plant growth...) and digital-twin engine adapters (Unreal, Unity, Unigine, Omniverse, Apple, Three.js). See `claude-skills/README.md`.
+
+Actual current directory layout (server portion; run `tree claude-skills/` separately for the skills side):
+
 ```
-qfoldit-protein-design-mcp/
-
-
+Protein-Design-MCP/
 ├── README.md
-├── LICENSE
+├── NOTICE                    ← licensing/attribution for both parts of this repo
+├── LICENSE                   ← Apache-2.0 (governs everything EXCEPT claude-skills/)
 ├── pyproject.toml
 ├── docker-compose.yml
-├── Dockerfile
-
-
-│
-├── server/
-│
-│   ├── main.py
-│   ├── mcp_server.py
-│   ├── registry.py
-│   └── config.py
-│
-
-
-│
-├── agents/
-│
-│   ├── protein_engineer.py
-│   ├── binder_designer.py
-│   ├── validator.py
-│   ├── optimizer.py
-│   └── scientific_planner.py
-│
-
-
-│
-├── workflows/
-│
-│   ├── protein_design.py
-│   ├── binder_design.py
-│   ├── mutation_scan.py
-│   ├── affinity_optimization.py
-│   └── digital_twin.py
-│
-
-
-│
-├── adapters/
-│
-│   ├── rfdiffusion3/
-│   │
-│   ├── proteinmpnn/
-│   │
-│   ├── boltz2/
-│   │
-│   ├── openfold3/
-│   │
-│   ├── esmfold/
-│   │
-│   ├── diffdock/
-│   │
-│   ├── openmm/
-│   │
-│   └── pyrosetta/
-│
-
-
-│
-├── tools/
-│
-│   ├── structure_analysis.py
-│   ├── sequence_design.py
-│   ├── docking.py
-│   ├── scoring.py
-│   └── visualization.py
-│
-
-
-│
-├── data/
-│
-│   ├── templates/
-│   ├── examples/
-│   └── schemas/
-│
-
-
-│
-├── visualization/
-│
-│   ├── usd_export.py
-│   ├── nanover.py
-│   └── omniverse.py
-│
-
-
-│
-├── skills/
-│
-│   ├── protein-design/
-│   ├── drug-discovery/
-│   └── structural-biology/
-│
-
-
-│
-└── tests/
-
+├── Dockerfile*
+├── src/protein_design_mcp/
+│   ├── server.py
+│   ├── pipelines/            (alphafold2, boltz_runner, esmfold, openmm_runner,
+│   │                          proteinmpnn, pyrosetta_runner, rfdiffusion)
+│   ├── tools/                (19 MCP tools -- design, predict, score, analyze)
+│   ├── resources/
+│   └── utils/
+├── tests/
+└── claude-skills/            ← MIT license (own LICENSE file), see claude-skills/README.md
 ```
+
 [![PyPI](https://img.shields.io/pypi/v/protein-design-mcp)](https://pypi.org/project/protein-design-mcp/)
 [![Docker Hub](https://img.shields.io/docker/v/jeonghyeonkim8652/protein-design-mcp?label=docker%20hub&logo=docker)](https://hub.docker.com/r/jeonghyeonkim8652/protein-design-mcp)
 [![GHCR](https://img.shields.io/badge/ghcr.io-protein--design--mcp-blue?logo=github)](https://github.com/jasonkim8652/protein-design-mcp/pkgs/container/protein-design-mcp)
@@ -122,7 +43,17 @@ An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to
 
 The 6 non-bundled tools (`rosetta_*` x4, `predict_*_boltz` x2) install cleanly via pip extras — see [Optional Tools](#optional-tools-pyrosetta--boltz-2).
 
-## Installation
+## claude-skills/ (qFoldIT's own work, MIT-licensed)
+
+The `claude-skills/` subdirectory is a self-contained Claude Code plugin — 20 skills spanning scientific simulation (VQE quantum chemistry, HP-lattice protein folding, bio-mining kinetics, pipeline corrosion, plant growth/NPK modeling, L-systems, plastic pyrolysis) and a Universal Assembly Graph (UAG) based digital-twin pipeline with adapters for Unreal, Unity, Unigine, OpenUSD/Omniverse, Apple RealityKit, and Three.js. It has its own `LICENSE` (MIT), `README.md`, `CITATION.cff`, and governance docs (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`). To install just this plugin in Claude Code, point a marketplace add at the `claude-skills/` directory rather than the repo root. Full details: [`claude-skills/README.md`](claude-skills/README.md).
+
+---
+
+## MCP Server (upstream: jasonkim8652/protein-design-mcp, Apache-2.0)
+
+### Installation
+
+
 
 Choose the method that fits your situation. Listed from simplest to most customizable.
 
