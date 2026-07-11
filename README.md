@@ -34,7 +34,7 @@ Protein-Design-MCP/
 
 An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to computational protein design tools. Ask your LLM to design binders, generate de novo folds, predict structures, score interfaces, or relax with Rosetta — it calls the right tool automatically.
 
-**24 tools total**, spanning generative design, structure prediction, physics-based scoring, analysis, bioactivity/QSAR prediction, and quantum-computing-assisted peptide folding. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, OpenMM, **ZairaChem**, **QuPepFold** (CVaR-VQE), and a classical simulation inspired by **QFold**'s quantum-walk Metropolis algorithm. 3D output from any of these can be exported to OpenUSD (`uag_exporter.py`) for NVIDIA Omniverse / NanoVer VR / Unreal / Unity.
+**25 tools total**, spanning generative design, structure prediction, physics-based scoring, analysis, bioactivity/QSAR prediction, and quantum-computing-assisted peptide folding. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, OpenMM, **ZairaChem**, **QuPepFold** (CVaR-VQE), and a classical simulation inspired by **QFold**'s quantum-walk Metropolis algorithm. 3D output from any of these -- or from external MCPs like BindCraft's `bindcraft_mcp` -- can be exported to OpenUSD (`uag_exporter.py`) for NVIDIA Omniverse / NanoVer VR / Unreal / Unity.
 
 | Distribution | Tools out-of-the-box | Extras |
 |---|---|---|
@@ -97,10 +97,10 @@ npx -y @smithery/cli install protein-design-mcp --client claude
 ### 3. pip + Manual Config
 
 ```bash
-pip install protein-design-mcp                      # Core CPU (11 tools -- includes predict_structure_quantum_walk, no extra deps)
-pip install "protein-design-mcp[gpu]"               # + PyTorch + ESM (14 tools)
-pip install "protein-design-mcp[gpu,rosetta]"       # + PyRosetta (18 tools) *
-pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (20 of 24 tools -- ZairaChem's 3 tools and predict_peptide_quantum_vqe need separate envs, see below) **
+pip install protein-design-mcp                      # Core CPU (12 tools -- includes predict_structure_quantum_walk and export_structure_to_spatial_twin, no extra deps)
+pip install "protein-design-mcp[gpu]"               # + PyTorch + ESM (15 tools)
+pip install "protein-design-mcp[gpu,rosetta]"       # + PyRosetta (19 tools) *
+pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (21 of 25 tools -- ZairaChem's 3 tools and predict_peptide_quantum_vqe need separate envs, see below) **
 ```
 
 \* PyRosetta requires a [free academic license](https://www.pyrosetta.org/downloads). The `[rosetta]` extra installs `pyrosetta-installer` which fetches the wheel after you accept the license.
@@ -182,7 +182,7 @@ docker run --rm -i \
   jeonghyeonkim8652/protein-design-mcp:latest
 ```
 
-CPU mode disables `design_binder`, `design_fold`, `generate_backbone` (RFdiffusion is GPU-only) → 11 tools available.
+CPU mode disables `design_binder`, `design_fold`, `generate_backbone` (RFdiffusion is GPU-only) → 12 tools available.
 
 #### MCP client config
 
@@ -280,7 +280,7 @@ After deploying, Modal prints your endpoint URL. Connect via the local proxy:
 }
 ```
 
-20 of 24 tools available (ZairaChem's 3 tools and `predict_peptide_quantum_vqe` need their own separate environments, see below -- not part of this Modal image). Local PDB files are automatically sent to Modal.
+21 of 25 tools available (ZairaChem's 3 tools and `predict_peptide_quantum_vqe` need their own separate environments, see below -- not part of this Modal image). Local PDB files are automatically sent to Modal.
 
 ---
 
@@ -567,6 +567,14 @@ Check progress of long-running design jobs.
 {"job_id": "abc123"}
 ```
 
+#### `export_structure_to_spatial_twin`
+
+Export any existing PDB file to OpenUSD (.usda), for NVIDIA Omniverse / NanoVer VR / Unreal Engine 5 / Unity. Source-agnostic -- works on this server's own PDB output as well as PDB output from external MCPs (see [Optional Tools: MacromNex/BindCraft](#optional-tools-macromnexbindcraft-binder-design)).
+
+```json
+{"pdb_path": "path/to/structure.pdb", "output_path": "path/to/output.usda"}
+```
+
 ## Optional Tools: PyRosetta + Boltz-2
 
 These 6 tools (`rosetta_score`, `rosetta_relax`, `rosetta_interface_score`, `rosetta_design`, `predict_structure_boltz`, `predict_affinity_boltz`) are **not included in the Docker image** because:
@@ -658,7 +666,7 @@ source ~/.venvs/protein-design-quantum/bin/activate
 pip install "protein-design-mcp[quantum]"
 ```
 
-Then point a separate MCP server instance at this venv's Python -- see `claude_desktop_config.json` in the repo root for a worked 4-environment example (core / boltz / zairachem / quantum), or the "Configuring two MCP servers side-by-side" pattern above.
+Then point a separate MCP server instance at this venv's Python -- see `claude_desktop_config.json` in the repo root for a worked 5-environment example (core / boltz / zairachem / quantum / macromnex-bindcraft), or the "Configuring two MCP servers side-by-side" pattern above.
 
 ### Usage notes
 
@@ -676,6 +684,30 @@ pip install "protein-design-mcp[usd]"   # optional -- enables the real pxr/UsdGe
 ```
 
 Without `usd-core` installed, the same function still works via a hand-written, schema-valid ASCII `.usda` fallback (no extra dependency) -- you lose time-sampling/composition-arc support, but get a working file either way.
+
+#### `export_structure_to_spatial_twin` -- exporting *any* PDB file, including from external MCPs
+
+For anything that only produces a PDB file rather than this repo's own coordinate-dict shape, use the `export_structure_to_spatial_twin` MCP tool (or `uag_exporter.export_pdb_to_openusd(pdb_path, output_path)` directly): it parses the PDB with this repo's own `utils/pdb.py`, flattens it to the coordinate-dict shape above, and hands it straight to `export_to_openusd`. It has no dependency on whatever tool produced the PDB -- it only reads a file path off disk.
+
+```json
+{"pdb_path": "path/to/binder_design.pdb", "output_path": "path/to/output.usda"}
+```
+
+This is the integration point for **BindCraft** (via ProteinMCP's `bindcraft_mcp`, see [Optional Tools: MacromNex/BindCraft](#optional-tools-macromnexbindcraft-binder-design) below) -- point this tool at whatever `.pdb` file BindCraft's `quick_design` writes to disk and get back a live OpenUSD 3D model, no manual conversion step required.
+
+## Optional Tools: MacromNex/BindCraft (binder design)
+
+`claude_desktop_config.json`'s 5th server entry, `qfoldit-mcp-macromnex-bindcraft`, launches an **external, independently-maintained** MCP: `bindcraft_mcp`, a wrapper around [BindCraft](https://github.com/martinpacesa/BindCraft) (Pacesa, Nickel, Schellhaas et al., "One-shot design of functional protein binders with BindCraft," developed at EPFL's Correia Lab with MIT's Ovchinnikov Lab). `bindcraft_mcp` itself is published as part of [ProteinMCP](https://github.com/charlesxu90/ProteinMCP) (Xu et al., *Protein Science*, 2026, doi:10.1002/pro.70547), forked at [MacromNex/ProteinMCP](https://github.com/MacromNex/ProteinMCP) -- [MacromNex](https://github.com/MacromNex) is a real, independently-confirmed GitHub organization ("Macromolecular Nexus") focused on macromolecular design tooling.
+
+**Naming note:** "macromnex-bindcraft" is this config entry's own label, not a published package or command name -- no repository by that exact name was found. What actually gets launched is `bindcraft_mcp`'s own `src/server.py`, run with its own dedicated conda/mamba environment's Python (its documented invocation is `<env>/bin/python src/server.py`, using `fastmcp`) -- **not** this repo's `protein_design_mcp.server` module. See the config entry's own inline comment for the full correction.
+
+**Not vendored in this repo** -- it's a separate project with its own install script, its own JAX/CUDA setup, and its own PyRosetta license requirement (same license terms as this repo's own `rosetta_*` tools). To use it:
+
+1. Clone `MacromNex/ProteinMCP` (or `charlesxu90/ProteinMCP`) and follow `tool-mcps/bindcraft_mcp`'s own README for environment setup (creates its own `./env`, installs BindCraft itself).
+2. Point `claude_desktop_config.json`'s `qfoldit-mcp-macromnex-bindcraft` entry's paths at wherever that ends up on your machine.
+3. Once it's running, its `quick_design` (or async equivalent) tool writes a `.pdb` file -- feed that path directly to this repo's own `export_structure_to_spatial_twin` tool to get a live OpenUSD 3D model in Omniverse/NanoVer/Unreal/Unity.
+
+**One framing note:** MacromNex's own stated mission (per its GitHub organization page) is "Geometric Deep Learning, Molecular Physics, and Synthetic Biology" research -- it does not describe itself as a gamification or gaming initiative anywhere in its own materials. Any "gamification"/game-related framing applied to this integration is qFoldIT's own product positioning, not a claim made by or about MacromNex, BindCraft, or ProteinMCP.
 
 ## Configuration
 
@@ -724,7 +756,8 @@ MCP Server (stdio)
  |    +-- predict_structure_quantum_walk  Classical quantum-walk-inspired Metropolis + NeRF
  |
  +-- Spatial digital twin export
- |    +-- uag_exporter.export_to_openusd  Atom coordinates -> OpenUSD (.usda)
+ |    +-- uag_exporter.export_to_openusd      Atom coordinates -> OpenUSD (.usda)
+ |    +-- export_structure_to_spatial_twin    Any PDB file -> OpenUSD (source-agnostic, incl. external MCPs)
  |
  +-- Analysis tools
  |    +-- analyze_interface   PDB geometry analysis
@@ -770,4 +803,6 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 - QuPepFold - CVaR-optimized VQE peptide folding (Uttarkar, Niranjan, Saxena, Kumar, *PLOS ONE*, 2026, https://doi.org/10.1371/journal.pone.0342012)
 - QFold - Quantum-walk Metropolis protein folding (Casares, Campos, Martin-Delgado, "QFold: quantum walks and deep learning to solve protein folding," *Quantum Science and Technology* 7, 025013, 2022, https://doi.org/10.1088/2058-9565/ac4f2f, arXiv:2101.10279) -- classical inspiration only for `predict_structure_quantum_walk`, see that tool's own scope note
 - [OpenUSD](https://openusd.org/) - Scene description format used by `uag_exporter.py` for spatial digital-twin export (NVIDIA Omniverse, NanoVer VR, Unreal Engine 5, Unity)
+- [BindCraft](https://github.com/martinpacesa/BindCraft) - De novo protein binder design (Pacesa, Nickel, Schellhaas et al., EPFL Correia Lab / MIT Ovchinnikov Lab). Not vendored -- integrated externally via `bindcraft_mcp`, see [Optional Tools: MacromNex/BindCraft](#optional-tools-macromnexbindcraft-binder-design)
+- [ProteinMCP](https://github.com/charlesxu90/ProteinMCP) - Agentic MCP framework packaging BindCraft as `bindcraft_mcp` (Xu et al., *Protein Science*, 2026, https://doi.org/10.1002/pro.70547), forked at [MacromNex/ProteinMCP](https://github.com/MacromNex/ProteinMCP)
 - Full citation metadata, including software/consortium references: see [CITATION.cff](CITATION.cff)
