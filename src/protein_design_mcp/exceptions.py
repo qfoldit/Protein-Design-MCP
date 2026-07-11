@@ -59,6 +59,12 @@ class BoltzError(PipelineError):
     pass
 
 
+class ZairaChemError(PipelineError):
+    """Raised when ZairaChem (QSAR/bioactivity) execution fails."""
+
+    pass
+
+
 class ValidationError(ProteinDesignError):
     """Raised when validation fails."""
 
