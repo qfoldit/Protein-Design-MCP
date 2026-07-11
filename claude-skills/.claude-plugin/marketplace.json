@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "qfoldit-skills",
+      "description": "Twenty Claude skills for qFoldIT: scientific simulation + digital-twin engine adapters (Unreal, Unity, Unigine, Omniverse, Apple, Three.js) + universal scene export, on a shared Universal Assembly Graph format.",
+      "path": "."
+    }
+  ]
+}
