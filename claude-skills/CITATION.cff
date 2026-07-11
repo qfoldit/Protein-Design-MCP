@@ -1,0 +1,75 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below. If you use one of the
+  third-party models/frameworks wrapped by a specific skill (AlphaFold2,
+  DiffDock, MolMIM, Evo 2, Boltz-2, NanoVer, CVaR-VQE, etc.), please ALSO
+  cite that work directly -- see each skill's SKILL.md / references/ for
+  the specific citation, e.g. skills/quantum, skills/bionemo-agent-toolkit,
+  skills/nanover.
+title: "qFoldIT Skills"
+version: 1.1.0
+date-released: 2026-07-01
+url: "https://github.com/qfoldit/skills"
+repository-code: "https://github.com/qfoldit/skills"
+license: MIT
+type: software
+authors:
+  - name: "qFoldIT"
+    # Individual contributor names are added here only with their
+    # explicit consent -- see CONTRIBUTING.md. Do not add a named
+    # individual to this file (or to any grant/funding materials
+    # referencing this repository) without confirming they agree to be
+    # listed and in what role.
+references:
+  - type: article
+    title: "Improving Variational Quantum Optimization Using CVaR"
+    authors:
+      - name: "Panagiotis Kl. Barkoutsos"
+      - name: "Giacomo Nannicini"
+      - name: "Anton Robert"
+      - name: "Ivano Tavernelli"
+      - name: "Stefan Woerner"
+    journal: "Quantum"
+    volume: 4
+    pages: 256
+    year: 2020
+    identifiers:
+      - type: other
+        value: "arXiv:1907.04769"
+    notes: "CVaR-VQE implementation basis, skills/quantum/scripts/vqe_simulator.py"
+  - type: article
+    title: "Highly accurate protein structure prediction with AlphaFold"
+    authors:
+      - name: "John Jumper"
+      - name: "Richard Evans"
+      - name: "Alexander Pritzel"
+    journal: "Nature"
+    volume: 596
+    pages: "583-589"
+    year: 2021
+    identifiers:
+      - type: doi
+        value: "10.1038/s41586-021-03819-2"
+    notes: "AlphaFold2, skills/bionemo-agent-toolkit"
+  - type: article
+    title: "DiffDock: Diffusion Steps, Twists, and Turns for Molecular Docking"
+    authors:
+      - name: "Gabriele Corso"
+      - name: "Hannes Stärk"
+      - name: "Bowen Jing"
+      - name: "Regina Barzilay"
+      - name: "Tommi Jaakkola"
+    year: 2023
+    notes: "DiffDock, skills/bionemo-agent-toolkit"
+  - type: generic
+    title: "NanoVer (formerly Narupa): interactive molecular dynamics in VR"
+    authors:
+      - name: "Intangible Realities Lab (IRL2)"
+    url: "https://github.com/IRL2/nanover-server-py"
+    notes: "skills/nanover -- see that skill's own citation requirements before using"
+  - type: article
+    title: "The Protein Folding Problem" # HP lattice model
+    authors:
+      - name: "Ken A. Dill"
+    year: 1985
+    notes: "2D HP-lattice folding model basis, skills/qfold"
