@@ -77,6 +77,23 @@ boltz = [
 # (Listed here for documentation; pip cannot resolve it from PyPI.)
 zairachem = [
 ]
+# Quantum peptide folding (predict_peptide_quantum_vqe). Heavy Qiskit/Braket
+# stack -- run in a dedicated venv (see claude_desktop_config.json's
+# qfoldit-mcp-quantum entry), not alongside [gpu]/[boltz]'s torch pins.
+# qupepfold's exact PyPI availability/version was not independently
+# reverified in this addition -- confirm before pinning a version.
+quantum = [
+    "qupepfold",
+    "qiskit>=1.0",
+    "qiskit-aer>=0.13",
+    "amazon-braket-sdk>=1.70",
+]
+# OpenUSD export (uag_exporter.py). Optional -- uag_exporter.py falls back
+# to a hand-written ASCII .usda writer with no dependency if usd-core isn't
+# installed, so this extra only unlocks the schema-validated pxr-based path.
+usd = [
+    "usd-core>=23.11",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
