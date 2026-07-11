@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "protein-design-mcp"
 version = "1.0.0"
-description = "MCP server for protein design: RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, Boltz, PyRosetta, ESM2, OpenMM"
+description = "MCP server for protein design: RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, Boltz, PyRosetta, ESM2, OpenMM, ZairaChem"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.10"
@@ -63,6 +63,19 @@ rosetta = [
 # install in an isolated virtualenv, not alongside [gpu].
 boltz = [
     "boltz>=2.0.0",
+]
+# ZairaChem AutoML QSAR/bioactivity prediction (predict_bioactivity, train_qsar_model).
+# Distributed via its own conda environment + install script, NOT pip --
+# cannot be resolved as a pip extra. See:
+#   https://github.com/ersilia-os/zaira-chem
+# Install example:
+#   git clone https://github.com/ersilia-os/zaira-chem.git && cd zaira-chem
+#   bash install_script.sh && conda activate zairachem
+# Also depends on the Ersilia Model Hub (its own conda/Docker-based CLI)
+# for descriptor calculation -- budget real setup time, this is a heavy
+# multi-tool stack, not a lightweight dependency.
+# (Listed here for documentation; pip cannot resolve it from PyPI.)
+zairachem = [
 ]
 dev = [
     "pytest>=7.0",
