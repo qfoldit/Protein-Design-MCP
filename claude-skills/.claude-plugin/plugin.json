@@ -1,0 +1,114 @@
+{
+  "name": "qfoldit-skills",
+  "version": "1.2.0",
+  "description": "Twenty Claude skills for qFoldIT: scientific simulation (VQE, protein folding, bio-mining, corrosion, MEOR, prospecting, plant growth, plastic pyrolysis, L-systems, NanoVer VR bridge, BioNeMo structure prediction) plus digital-twin/engine adapters (Unreal, Unity, Unigine, OpenUSD/Omniverse, Apple RealityKit/visionOS, Three.js/WebXR) and universal scene export, built on a shared Universal Assembly Graph (UAG) format.",
+  "author": "qFoldIT",
+  "license": "MIT",
+  "repository": "https://github.com/qfoldit/skills",
+  "homepage": "https://qfoldit.github.io/claude/",
+  "keywords": [
+    "science",
+    "simulation",
+    "chemistry",
+    "biology",
+    "quantum",
+    "L-systems",
+    "corrosion",
+    "mining",
+    "plastic pyrolysis",
+    "digital twin",
+    "unreal",
+    "unity",
+    "unigine",
+    "omniverse",
+    "usd",
+    "visionos",
+    "realitykit",
+    "threejs",
+    "webxr",
+    "nanover",
+    "vr"
+  ],
+  "skills": {
+    "scene-export": {
+      "description": "Converts an engine-agnostic scene description (molecules, L-system geometry) into universal files -- OBJ, glTF 2.0, standalone Three.js HTML, Godot 4.x GDScript -- for use outside the live MCP engine adapters",
+      "path": "skills/scene-export"
+    },
+    "quantum": {
+      "description": "Classical statevector VQE simulator (numpy), validated against a published H2/STO-3G benchmark (arXiv:2209.09564)",
+      "path": "skills/quantum"
+    },
+    "qfold": {
+      "description": "Hybrid quantum-classical 2D HP-lattice protein folding (Dill 1985) with QAOA-style circuit on Braket LocalSimulator",
+      "path": "skills/qfold"
+    },
+    "bionemo-agent-toolkit": {
+      "description": "AlphaFold2, DiffDock, MolMIM, Evo 2, Boltz-2 -- real HTTP clients against self-hosted NVIDIA BioNeMo NIM containers, verified against NVIDIA's own docs. AlphaFold3 is handled via the separate alphafold3_mcp MCP server, not reimplemented here. Compatible client, not an official NVIDIA/DeepMind integration.",
+      "path": "skills/bionemo-agent-toolkit"
+    },
+    "l-systems": {
+      "description": "L-systems for procedural plant branching/morphogenesis, renders SVG",
+      "path": "skills/l-systems"
+    },
+    "meor": {
+      "description": "Kinetics of microbial enhanced oil recovery",
+      "path": "skills/meor"
+    },
+    "mining": {
+      "description": "Bio-oxidation, biosorption, and cyanide degradation kinetics for metal recovery",
+      "path": "skills/mining"
+    },
+    "oilgas": {
+      "description": "CO2 pipeline corrosion rate and remaining-wall-life estimation (de Waard-Milliams)",
+      "path": "skills/oilgas"
+    },
+    "plant-growth": {
+      "description": "Plant growth/morphology modeling from NPK nutrition and light spectrum (qualitative, not species-calibrated)",
+      "path": "skills/plant-growth"
+    },
+    "plastic-characterization": {
+      "description": "Pyrolysis yield estimation for mixed plastic feedstock (oil/gas/char, chlorine risk)",
+      "path": "skills/plastic-characterization"
+    },
+    "prospecting": {
+      "description": "Indicator-taxa statistics for microbial biogeochemical mineral exploration",
+      "path": "skills/prospecting"
+    },
+    "nanover": {
+      "description": "Bridge qFoldIT structures into NanoVer (IRL2) for collaborative interactive MD in VR -- third-party framework, citation required",
+      "path": "skills/nanover"
+    },
+    "game-designer": {
+      "description": "Produces the Universal Assembly Graph (UAG) -- the engine-neutral scene/interaction plan consumed by all engine adapters below",
+      "path": "skills/game-designer"
+    },
+    "digital-twin-builder": {
+      "description": "Enriches a UAG with simulation semantics (units, physical properties, constraints) to make it digital-twin-ready before engine export",
+      "path": "skills/digital-twin-builder"
+    },
+    "unreal-world-builder": {
+      "description": "Exports a UAG to Unreal Engine via the official Epic Games MCP plugin (EpicGames/unreal-engine-skills-for-claude-code-plugin)",
+      "path": "skills/unreal-world-builder"
+    },
+    "unity-experience-builder": {
+      "description": "Exports a UAG to Unity via CoplayDev/unity-mcp -- community MIT bridge, NOT affiliated with Unity Technologies",
+      "path": "skills/unity-experience-builder"
+    },
+    "unigine-simulation-engineer": {
+      "description": "Exports a UAG to UNIGINE 2, using docs-grounded verification against unigine-engine/ai-docs to avoid hallucinated API calls",
+      "path": "skills/unigine-simulation-engineer"
+    },
+    "openusd-architect": {
+      "description": "Exports a UAG to OpenUSD/NVIDIA Omniverse via the official NVIDIA-Omniverse/kit-usd-agents MCP servers",
+      "path": "skills/openusd-architect"
+    },
+    "apple-spatial-designer": {
+      "description": "Exports a UAG to RealityKit/visionOS/USDZ via Xcode 26.3's official Claude Agent SDK / MCP integration",
+      "path": "skills/apple-spatial-designer"
+    },
+    "threejs-web-designer": {
+      "description": "Exports a UAG to a browser WebXR experience via Three.js/React Three Fiber -- community skills ecosystem, no single official one",
+      "path": "skills/threejs-web-designer"
+    }
+  }
+}
