@@ -1,0 +1,43 @@
+{
+  "skill": "qfoldit-oilgas",
+  "eval_set_version": "1.0",
+  "notes": "Representative prompts and the qualitative behavior checks performed against corrosion_kinetics.py before packaging (see references/model_documentation.md).",
+  "cases": [
+    {
+      "id": "reference-point-sanity-check",
+      "prompt": "Estimate the CO2 corrosion rate for a pipeline at a commonly-cited reference condition (e.g. de Waard-Milliams textbook conditions).",
+      "expected_behavior": "predict_corrosion_rate reproduces the known reference-point corrosion rate from the de Waard-Milliams correlation within documented tolerance -- this was checked against a known literature value before packaging, not just assumed correct.",
+      "category": "correctness"
+    },
+    {
+      "id": "temperature-peak-non-monotonicity",
+      "prompt": "How does corrosion rate change with temperature from 20C to 150C at fixed CO2 partial pressure?",
+      "expected_behavior": "The combined dewaard_nomogram_rate + scale_factor model produces a non-monotonic response: rate increases with temperature initially, then falls off at higher temperature due to protective scale formation (scaling_temperature_c/scale_factor) -- not a monotonically increasing curve.",
+      "category": "correctness"
+    },
+    {
+      "id": "flow-velocity-regimes",
+      "prompt": "How does flow velocity affect corrosion rate -- both at low and very high velocities?",
+      "expected_behavior": "flow_enhancement_factor increases corrosion rate with velocity up to a point (mass-transfer enhancement); erosion_corrosion_factor kicks in and further increases the rate at high velocities (erosion regime) -- the skill should distinguish these two regimes rather than applying one flat velocity factor.",
+      "category": "correctness"
+    },
+    {
+      "id": "pitting-risk-monotonicity",
+      "prompt": "How does salinity affect pitting corrosion risk?",
+      "expected_behavior": "pitting_risk_score is monotonically increasing with salinity (ppt) over the modeled range, consistent with known pitting-risk behavior in produced water.",
+      "category": "correctness"
+    },
+    {
+      "id": "inhibitor-dosing-proportionality",
+      "prompt": "How much does a corrosion inhibitor reduce the predicted corrosion rate at a given dose?",
+      "expected_behavior": "predict_corrosion_rate's inhibitor term reduces the rate in the documented proportional relationship to dose -- the skill should state the assumed inhibitor-effectiveness model explicitly rather than implying a universal, product-independent number.",
+      "category": "correctness"
+    },
+    {
+      "id": "remaining-life-calibration-fit",
+      "prompt": "Fit the de Waard offset constant to my own field-measured corrosion rate data, then estimate remaining pipeline wall life.",
+      "expected_behavior": "fit_dewaard_offset_from_data recovers the offset close to ground truth on synthetic calibration data (documented tolerance); remaining_life_years is then computed from current wall thickness, minimum required thickness, and the fitted rate -- the skill should flag that field data quality drives the accuracy of this estimate, not claim precision the calibration data doesn't support.",
+      "category": "honesty / scope limit"
+    }
+  ]
+}

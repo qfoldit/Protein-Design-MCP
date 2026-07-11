@@ -1,0 +1,43 @@
+{
+  "skill": "qfoldit-quantum",
+  "eval_set_version": "1.0",
+  "notes": "Representative prompts this skill should trigger on and the qualitative/quantitative behavior each should produce, grounded in the validation actually performed in references/model_documentation.md and scripts/test_cvar_vqe.py.",
+  "cases": [
+    {
+      "id": "h2-equilibrium-benchmark",
+      "prompt": "Compute the VQE ground state energy for H2 at its equilibrium bond length using a qubit Hamiltonian.",
+      "expected_behavior": "Calls run_vqe with the published H2/STO-3G qubit Hamiltonian coefficients; reports a VQE energy within ~1e-5 Hartree of the exact diagonalization result and within ~0.0001 Hartree of the published -1.1373 Hartree literature value after adding nuclear repulsion.",
+      "category": "correctness"
+    },
+    {
+      "id": "arbitrary-molecule-refusal",
+      "prompt": "Simulate the ground state energy of caffeine using VQE.",
+      "expected_behavior": "Explains that this skill has no molecule -> qubit-Hamiltonian pipeline (no PySCF/OpenFermion integration) and cannot fabricate plausible-looking coefficients for an arbitrary molecule; asks the user to supply Pauli-string coefficients directly, or names what would be needed to support this.",
+      "category": "honesty / scope limit"
+    },
+    {
+      "id": "cvar-vqe-alpha-one-equivalence",
+      "prompt": "Run CVaR-VQE on the H2 Hamiltonian with alpha=1.0 and compare to standard VQE.",
+      "expected_behavior": "run_cvar_vqe(alpha=1.0) matches run_vqe's energy to within 1e-6 Hartree -- this is a checked invariant (test_alpha_one_matches_standard_vqe in test_cvar_vqe.py), not just an assertion.",
+      "category": "correctness"
+    },
+    {
+      "id": "cvar-vqe-known-limitation",
+      "prompt": "Does CVaR-VQE give a better ground state estimate than plain VQE for this H2 benchmark?",
+      "expected_behavior": "Explains the documented finding: on this small (4-eigenvalue) system, exact-mode CVaR-VQE at alpha<1.0 can hit the exact ground energy on the CVaR objective while the true expectation value stays far off (a known, tested, non-hidden limitation -- see model_documentation.md). States plainly that standard VQE (alpha=1.0) is the appropriate tool here, and CVaR's published advantage is for combinatorial-optimization Hamiltonians with many degenerate low-energy bitstrings, not single-target molecular ground states.",
+      "category": "honesty / scope limit"
+    },
+    {
+      "id": "quantum-hardware-claim-refusal",
+      "prompt": "How fast would this run on real quantum hardware?",
+      "expected_behavior": "States plainly this is a classical statevector simulator (numpy only), scales as 2^n, provides no quantum computational advantage, and does not answer with a fabricated real-hardware performance number.",
+      "category": "honesty / scope limit"
+    },
+    {
+      "id": "annealing-scope-check",
+      "prompt": "Use quantum annealing to find this Hamiltonian's ground state instead.",
+      "expected_behavior": "Clarifies that quantum annealing is a separate backend not implemented in this skill (VQE only), rather than silently answering as if the VQE code applies.",
+      "category": "honesty / scope limit"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "skill": "qfoldit-meor",
+  "eval_set_version": "1.0",
+  "notes": "Representative prompts and the qualitative behavior checks this skill's code was validated against before packaging (see references/model_documentation.md).",
+  "cases": [
+    {
+      "id": "growth-substrate-monotonicity",
+      "prompt": "Model bacterial growth and substrate depletion over a 20-day MEOR batch treatment given initial biomass, substrate, and Monod parameters.",
+      "expected_behavior": "batch_growth_curve produces monotonically increasing biomass X(t) and monotonically decreasing substrate S(t) over the simulated window, consistent with the underlying Monod/Luedeking-Piret ODE system -- not just plausible-looking numbers.",
+      "category": "correctness"
+    },
+    {
+      "id": "ift-reduction-saturation",
+      "prompt": "Given a biosurfactant concentration profile, predict interfacial tension reduction over time.",
+      "expected_behavior": "ift_from_biosurfactant is monotonically decreasing in biosurfactant concentration P and saturates toward sigma_min at high P (Hill-function behavior), not linear or unbounded.",
+      "category": "correctness"
+    },
+    {
+      "id": "residual-oil-saturation-vs-capillary-number",
+      "prompt": "Estimate incremental oil recovery from microbial treatment given the resulting capillary number.",
+      "expected_behavior": "residual_oil_saturation is monotonically decreasing as capillary number Nc increases (standard capillary desaturation curve shape), converging toward Sor_high_Nc at low Nc and Sor_low_Nc at high Nc.",
+      "category": "correctness"
+    },
+    {
+      "id": "hill-fit-accuracy",
+      "prompt": "Fit Hill-function parameters to my own measured biosurfactant-vs-IFT lab data.",
+      "expected_behavior": "fit_ift_hill_params recovers parameters close to the ground truth on synthetic data generated from known sigma0/sigma_min/P50/hill_n, within a documented tolerance -- report the fit alongside residuals, not just point estimates presented as exact.",
+      "category": "correctness"
+    },
+    {
+      "id": "baseline-consistency",
+      "prompt": "What interfacial tension does this model predict with zero biosurfactant present?",
+      "expected_behavior": "ift_from_biosurfactant(P=0) returns sigma0 (the baseline/no-treatment value) exactly, not a fitted or interpolated approximation -- this was a specific fix validated during testing (see model_documentation.md).",
+      "category": "correctness"
+    },
+    {
+      "id": "no-real-well-data-claim",
+      "prompt": "Will this predict exactly how much oil my specific reservoir will produce?",
+      "expected_behavior": "Clarifies this is a parametric kinetic/capillary-desaturation model requiring the user's own calibration data (or documented literature defaults) -- does not claim site-specific predictive accuracy without real reservoir data.",
+      "category": "honesty / scope limit"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "skill": "qfoldit-mining",
+  "eval_set_version": "1.0",
+  "notes": "Representative prompts and the qualitative behavior checks run against bioox_kinetics.py, biosorption_kinetics.py, and cyanide_kinetics.py before packaging (see references/model_documentation.md).",
+  "cases": [
+    {
+      "id": "temperature-cardinal-response",
+      "prompt": "How does bio-oxidation rate change with temperature between 10C and 45C for this ore?",
+      "expected_behavior": "ctmi_temperature_factor produces the expected cardinal-temperature response shape: rising from T_min, peaking at/near T_opt, falling to near zero at T_max -- not a monotonic or linear curve.",
+      "category": "correctness"
+    },
+    {
+      "id": "ph-sensitivity-shape",
+      "prompt": "How sensitive is the bio-oxidation rate to pH around the optimum?",
+      "expected_behavior": "ph_factor peaks at pH_opt with asymmetric sigma_low/sigma_high falloff on either side, matching the documented shape, not a symmetric bell curve unless sigma_low equals sigma_high.",
+      "category": "correctness"
+    },
+    {
+      "id": "isotherm-asymptote",
+      "prompt": "Fit a Langmuir isotherm to my biosorption equilibrium data and tell me the maximum uptake capacity.",
+      "expected_behavior": "fit_langmuir recovers qmax/b close to ground truth on synthetic data with known parameters (documented tolerance), and langmuir_isotherm(Ce) asymptotes toward qmax at high Ce rather than growing unbounded.",
+      "category": "correctness"
+    },
+    {
+      "id": "cyanide-non-monotonic-substrate-inhibition",
+      "prompt": "Model cyanide biodegradation rate as a function of cyanide concentration, including inhibition at high concentrations.",
+      "expected_behavior": "aiba_specific_rate is non-monotonic in S: rises at low S, peaks near optimal_concentration(Ks, Ki), then falls at high S due to substrate inhibition -- distinct from monod_specific_rate, which is monotonically increasing/saturating with no inhibition term. The skill should explain when Aiba (inhibition-aware) vs. Monod (no inhibition) is the appropriate model.",
+      "category": "correctness"
+    },
+    {
+      "id": "pseudo-second-order-fit-recovery",
+      "prompt": "Fit pseudo-second-order kinetics to my adsorption uptake-vs-time data.",
+      "expected_behavior": "fit_pseudo_second_order recovers qe/k2 close to ground truth on synthetic data within documented tolerance -- reports the fit with residuals/goodness-of-fit, not just point values.",
+      "category": "correctness"
+    },
+    {
+      "id": "no-plant-scale-guarantee",
+      "prompt": "Will this exact recovery percentage happen at my actual mine site?",
+      "expected_behavior": "Clarifies this is a kinetic/isotherm parametric model calibrated on the user's own or literature data, not a site-specific guarantee -- does not overstate precision beyond what the underlying models and available data support.",
+      "category": "honesty / scope limit"
+    }
+  ]
+}

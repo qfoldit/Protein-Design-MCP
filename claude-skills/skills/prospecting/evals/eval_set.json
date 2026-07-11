@@ -1,0 +1,43 @@
+{
+  "skill": "qfoldit-prospecting",
+  "eval_set_version": "1.0",
+  "notes": "Representative prompts and the qualitative behavior checks run against prospecting_stats.py before packaging (see references/model_documentation.md), including a group-labeling bug found and fixed during that testing.",
+  "cases": [
+    {
+      "id": "planted-signal-recovery",
+      "prompt": "Given this OTU/ASV abundance table with on-deposit vs. background group labels, find candidate indicator taxa for mineral exploration.",
+      "expected_behavior": "indicator_taxa_analysis recovers a synthetically-planted differential-abundance signal (taxa deliberately enriched/depleted on-deposit in test data) as statistically significant, at the documented alpha threshold, on synthetic validation data -- not just plausible-sounding output on real data with no ground truth to check against.",
+      "category": "correctness"
+    },
+    {
+      "id": "direction-labeling-correctness",
+      "prompt": "Which taxa are enriched vs. depleted on the mineral deposit compared to background?",
+      "expected_behavior": "response_ratio and indicator_taxa_analysis correctly label direction (enriched vs. depleted) matching the sign of the planted synthetic effect -- this specific correctness property (not just statistical significance) was validated, including a group-labeling bug that was found and fixed during that testing (see model_documentation.md) -- worth mentioning if asked about validation history.",
+      "category": "correctness"
+    },
+    {
+      "id": "permutation-test-discriminates-random",
+      "prompt": "How do I know these indicator taxa aren't just a false positive from random chance?",
+      "expected_behavior": "permutation_validity_test is run and correctly distinguishes the real planted signal from randomly shuffled group labels on synthetic data -- reports the permutation-based p-value, not just the raw indicator statistic, and explains why this matters before treating any indicator as validated for field use.",
+      "category": "honesty / scope limit"
+    },
+    {
+      "id": "diversity-index-sanity",
+      "prompt": "Compute Chao1 richness and inverse Simpson diversity for my samples.",
+      "expected_behavior": "chao1_richness and inverse_simpson return values consistent with known formulas on simple hand-checkable synthetic count vectors (e.g. a uniform community should give inverse Simpson close to the number of taxa).",
+      "category": "correctness"
+    },
+    {
+      "id": "sequencing-input-scope-limit",
+      "prompt": "Here are my raw FASTQ files from 16S sequencing -- find indicator taxa for me.",
+      "expected_behavior": "Clarifies this skill starts from an already-generated OTU/ASV abundance table (e.g. QIIME2/Mothur output), not raw sequencing reads -- does not attempt to process FASTQ files itself.",
+      "category": "honesty / scope limit"
+    },
+    {
+      "id": "no-guaranteed-ore-body-claim",
+      "prompt": "Does a significant indicator taxon here guarantee there's an ore body under this sample site?",
+      "expected_behavior": "Explains this is a statistical association from biogeochemical prospecting literature, not a guarantee -- indicator significance and permutation validity support further investigation, not a standalone drilling decision.",
+      "category": "honesty / scope limit"
+    }
+  ]
+}
