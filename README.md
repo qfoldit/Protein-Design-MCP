@@ -34,7 +34,7 @@ Protein-Design-MCP/
 
 An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to computational protein design tools. Ask your LLM to design binders, generate de novo folds, predict structures, score interfaces, or relax with Rosetta — it calls the right tool automatically.
 
-**19 tools total**, spanning generative design, structure prediction, physics-based scoring, and analysis. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, and OpenMM.
+**21 tools total**, spanning generative design, structure prediction, physics-based scoring, analysis, and bioactivity/QSAR prediction. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, OpenMM, and **ZairaChem**.
 
 | Distribution | Tools out-of-the-box | Extras |
 |---|---|---|
@@ -100,7 +100,7 @@ npx -y @smithery/cli install protein-design-mcp --client claude
 pip install protein-design-mcp                      # Core CPU (10 tools)
 pip install "protein-design-mcp[gpu]"               # + PyTorch + ESM (13 tools)
 pip install "protein-design-mcp[gpu,rosetta]"       # + PyRosetta (17 tools) *
-pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (all 19 tools) **
+pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (19 of 21 tools -- ZairaChem's 2 tools need a separate conda env, see below) **
 ```
 
 \* PyRosetta requires a [free academic license](https://www.pyrosetta.org/downloads). The `[rosetta]` extra installs `pyrosetta-installer` which fetches the wheel after you accept the license.
@@ -280,7 +280,7 @@ After deploying, Modal prints your endpoint URL. Connect via the local proxy:
 }
 ```
 
-All 19 tools available. Local PDB files are automatically sent to Modal.
+19 of 21 tools available (ZairaChem's 2 tools need its own separate conda environment, see below -- not part of this Modal image). Local PDB files are automatically sent to Modal.
 
 ---
 
@@ -511,6 +511,24 @@ Fixed-backbone redesign pipeline: score → PackRotamers → MinMover → score.
 {"pdb_path": "path/to/input.pdb", "chains": "A_B", "fixed_positions": [12, 14, 18]}
 ```
 
+### Bioactivity / QSAR (**optional**, see [Optional Tools: ZairaChem](#optional-tools-zairachem-bioactivityqsar-prediction))
+
+#### `predict_bioactivity` (**optional**)
+
+Score candidate molecules against a trained ZairaChem model (yours, or a published pretrained one e.g. from the H3D Centre screening cascade). Classification only.
+
+```json
+{"input_csv": "path/to/candidates.csv", "model_dir": "path/to/model", "output_dir": "path/to/output"}
+```
+
+#### `train_qsar_model` (**optional**)
+
+Train a new binary-classification QSAR model from labeled SMILES + activity data.
+
+```json
+{"input_csv": "path/to/training_data.csv", "output_dir": "path/to/model_output", "cutoff": 6.5, "direction": "high"}
+```
+
 ### Utility
 
 #### `get_design_status`
@@ -570,7 +588,33 @@ Then point your MCP client at this venv's `protein-design-mcp` binary (or run tw
 }
 ```
 
-Your LLM will see all 19 tools through the two servers and call whichever is appropriate.
+Your LLM will see all 19 of those tools through the two servers and call whichever is appropriate (add a third server entry pointing at a zairachem conda env's Python for the remaining 2 ZairaChem tools, following the same pattern).
+
+## Optional Tools: ZairaChem (bioactivity/QSAR prediction)
+
+`predict_bioactivity` and `train_qsar_model` wrap [ZairaChem](https://github.com/ersilia-os/zaira-chem), a published open-source AutoML QSAR/QSPR pipeline from the Ersilia Open Source Initiative (Turon, Hlozek, Woodland et al., "First fully-automated AI/ML virtual screening cascade implemented at a drug discovery centre in Africa," *Nature Communications* 14, 5736, 2023). ZairaChem was co-developed with and validated at the [H3D Centre](https://h3d.uct.ac.za/) (University of Cape Town) -- pretrained models from that malaria/tuberculosis screening cascade are published separately at [ersilia-os/h3d-screening-cascade-models](https://github.com/ersilia-os/h3d-screening-cascade-models) and can be used directly with `predict_bioactivity` with no retraining needed.
+
+**Not included in the Docker image** for the same class of reason as PyRosetta/Boltz-2: ZairaChem is a heavy, conda-orchestrated, multi-environment AutoML stack (it also depends on the separately-installed Ersilia Model Hub CLI for descriptor calculation, which itself needs Docker or Singularity for most descriptor models) -- not something that fits cleanly into a single pip extra or a shared container alongside RFdiffusion's pinned torch stack.
+
+### Installing ZairaChem
+
+```bash
+git clone https://github.com/ersilia-os/zaira-chem.git
+cd zaira-chem
+bash install_script.sh
+conda activate zairachem
+```
+
+Verify: `zairachem --help` should print the CLI's subcommands (`fit`, `predict`, `distill`).
+
+Then point a separate MCP server instance at this conda environment's Python (same "configure two/three MCP servers side-by-side" pattern shown above for Boltz-2).
+
+### Usage notes
+
+- **Classification only** (not regression) -- binarize continuous assay data yourself, or pass `cutoff`/`direction` to `train_qsar_model` and let ZairaChem do it.
+- **`predict_bioactivity` needs an existing model** -- either one you trained with `train_qsar_model`, or a pretrained one (e.g. download an H3D screening-cascade model for a malaria/TB-relevant endpoint and point `model_dir` at it directly).
+- Natural pipeline position: score candidate molecules from `design_binder`/`design_fold`/an external molecule-generation step (e.g. qFoldIT's `genmol` skill) for predicted bioactivity *before* committing to expensive downstream validation (docking, synthesis).
+- Descriptor calculation (especially GROVER embeddings) can be slow on first run or CPU-only setups -- both new tools default to a generous 4-hour subprocess timeout, configurable via `ZairaChemConfig.timeout_seconds` in `pipelines/zairachem_runner.py`.
 
 ## Configuration
 
@@ -608,6 +652,10 @@ MCP Server (stdio)
  |    +-- rosetta_relax           FastRelax
  |    +-- rosetta_interface_score InterfaceAnalyzerMover
  |    +-- rosetta_design          PackRotamers + MinMover
+ |
+ +-- Bioactivity / QSAR (ZairaChem)
+ |    +-- predict_bioactivity     Score molecules against a trained/pretrained model
+ |    +-- train_qsar_model        Train a new binary-classification QSAR model
  |
  +-- Analysis tools
  |    +-- analyze_interface   PDB geometry analysis
@@ -648,3 +696,5 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 - [Boltz](https://github.com/jwohlwend/boltz) - Open structure and affinity prediction
 - [PyRosetta](https://www.pyrosetta.org/) - Physics-based protein modeling
 - [OpenMM](https://github.com/openmm/openmm) - Molecular dynamics and energy minimization
+- [ZairaChem](https://github.com/ersilia-os/zaira-chem) - AutoML QSAR/bioactivity prediction (Turon, Hlozek, Woodland et al., "First fully-automated AI/ML virtual screening cascade implemented at a drug discovery centre in Africa," *Nature Communications* 14, 5736, 2023, https://doi.org/10.1038/s41467-023-41512-2)
+- [H3D Centre screening cascade models](https://github.com/ersilia-os/h3d-screening-cascade-models) - Pretrained ZairaChem models usable directly with `predict_bioactivity`
