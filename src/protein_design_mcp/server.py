@@ -693,6 +693,99 @@ TOOLS = [
             "required": ["input_csv", "output_dir"],
         },
     ),
+    Tool(
+        name="predict_peptide_quantum_vqe",
+        description=(
+            "Estimate a low-energy peptide conformation using QuPepFold's CVaR-optimized "
+            "Variational Quantum Eigensolver (Uttarkar/Niranjan/Saxena/Kumar 2026, PLOS ONE, "
+            "doi:10.1371/journal.pone.0342012). Runs on Qiskit Aer, Amazon Braket's "
+            "tensor-network simulator, or IonQ Aria-1 hardware via Braket. Requires the "
+            "separately-installed `qupepfold` package (heavy Qiskit/Braket stack) -- if it "
+            "isn't importable in the current environment, returns a structured "
+            "status='unavailable' result rather than failing, so this never crashes the "
+            "MCP server process. Best suited to short peptides (up to ~10 residues)."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "sequence": {
+                    "type": "string",
+                    "description": "Amino-acid sequence (one-letter codes), ideally <= 10 residues",
+                },
+                "alpha": {
+                    "type": "number",
+                    "description": "CVaR confidence level in (0, 1] -- lower is more risk-averse (default: 0.1)",
+                    "default": 0.1,
+                },
+                "shots": {
+                    "type": "integer",
+                    "description": "Number of circuit executions per energy evaluation (default: 1024)",
+                    "default": 1024,
+                },
+            },
+            "required": ["sequence"],
+        },
+    ),
+    Tool(
+        name="predict_structure_quantum_walk",
+        description=(
+            "Simulate a continuous off-lattice, quantum-walk-inspired Metropolis fold over "
+            "(phi, psi) torsion angles, inspired by QFold (Casares/Campos/Martin-Delgado 2022, "
+            "Quantum Sci. Technol. 7, 025013, arXiv:2101.10279). This is a CLASSICAL simulation "
+            "of the quantum-walk metaphor (a biased random walk feeding a real Metropolis "
+            "acceptance step), not a re-implementation of quantum-walk quantum mechanics -- see "
+            "pipelines/quantum_runner.py for the full honest scope note. Returns a 3D N/CA/C "
+            "backbone coordinate tensor built via NeRF, suitable for export to OpenUSD via "
+            "uag_exporter.py."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "sequence": {
+                    "type": "string",
+                    "description": "Amino-acid sequence (one-letter codes)",
+                },
+                "steps": {
+                    "type": "integer",
+                    "description": "Number of Metropolis iterations (default: 500)",
+                    "default": 500,
+                },
+                "continuous_space": {
+                    "type": "boolean",
+                    "description": (
+                        "If true, propose continuous angle perturbations (QFold-style "
+                        "off-lattice mode); if false, snap to a coarse discrete grid "
+                        "(default: true)"
+                    ),
+                    "default": True,
+                },
+            },
+            "required": ["sequence"],
+        },
+    ),
+    Tool(
+        name="predict_admet_profile",
+        description=(
+            "Profile a small molecule's ADMET-style properties (solubility, toxicity, "
+            "malaria/tuberculosis bioactivity) by running ZairaChem's real `predict` CLI "
+            "(Turon/Hlozek/Woodland et al. 2023, Nat Commun 14:5736) once per configured "
+            "endpoint model directory, including the H3D Centre's published malaria/"
+            "tuberculosis screening-cascade models. Endpoints without a configured "
+            "ZAIRACHEM_MODEL_<ENDPOINT> environment variable are reported as "
+            "'not_configured' rather than faked. Requires the separately conda-installed "
+            "`zairachem` CLI."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "smiles": {
+                    "type": "string",
+                    "description": "SMILES string for the candidate molecule",
+                },
+            },
+            "required": ["smiles"],
+        },
+    ),
 ]
 
 
@@ -768,6 +861,12 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await handle_predict_bioactivity(arguments)
         elif name == "train_qsar_model":
             result = await handle_train_qsar_model(arguments)
+        elif name == "predict_peptide_quantum_vqe":
+            result = await handle_predict_peptide_quantum_vqe(arguments)
+        elif name == "predict_structure_quantum_walk":
+            result = await handle_predict_structure_quantum_walk(arguments)
+        elif name == "predict_admet_profile":
+            result = await handle_predict_admet_profile(arguments)
         else:
             result = {"error": f"Unknown tool: {name}"}
 
@@ -1240,6 +1339,47 @@ async def handle_train_qsar_model(arguments: dict[str, Any]) -> dict[str, Any]:
         direction=arguments.get("direction"),
         parameters_file=arguments.get("parameters_file"),
     )
+
+
+async def handle_predict_peptide_quantum_vqe(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle predict_peptide_quantum_vqe tool call (QuPepFold CVaR-VQE)."""
+    from protein_design_mcp.tools.predict_peptide_quantum_vqe import predict_peptide_quantum_vqe
+
+    sequence = arguments.get("sequence")
+    if not sequence:
+        return {"error": "sequence is required"}
+
+    return await predict_peptide_quantum_vqe(
+        sequence=sequence,
+        alpha=arguments.get("alpha", 0.1),
+        shots=arguments.get("shots", 1024),
+    )
+
+
+async def handle_predict_structure_quantum_walk(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle predict_structure_quantum_walk tool call (classical QFold-inspired quantum-walk simulation)."""
+    from protein_design_mcp.tools.predict_structure_quantum_walk import predict_structure_quantum_walk
+
+    sequence = arguments.get("sequence")
+    if not sequence:
+        return {"error": "sequence is required"}
+
+    return await predict_structure_quantum_walk(
+        sequence=sequence,
+        steps=arguments.get("steps", 500),
+        continuous_space=arguments.get("continuous_space", True),
+    )
+
+
+async def handle_predict_admet_profile(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle predict_admet_profile tool call (multi-endpoint ZairaChem orchestration)."""
+    from protein_design_mcp.tools.predict_admet_profile import predict_admet_profile
+
+    smiles = arguments.get("smiles")
+    if not smiles:
+        return {"error": "smiles is required"}
+
+    return await predict_admet_profile(smiles=smiles)
 
 
 # =============================================================================
