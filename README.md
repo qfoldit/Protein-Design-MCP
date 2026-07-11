@@ -34,7 +34,7 @@ Protein-Design-MCP/
 
 An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to computational protein design tools. Ask your LLM to design binders, generate de novo folds, predict structures, score interfaces, or relax with Rosetta — it calls the right tool automatically.
 
-**21 tools total**, spanning generative design, structure prediction, physics-based scoring, analysis, and bioactivity/QSAR prediction. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, OpenMM, and **ZairaChem**.
+**24 tools total**, spanning generative design, structure prediction, physics-based scoring, analysis, bioactivity/QSAR prediction, and quantum-computing-assisted peptide folding. Built on RFdiffusion, ProteinMPNN, ESMFold, AlphaFold2, **Boltz-2**, **PyRosetta**, ESM2, OpenMM, **ZairaChem**, **QuPepFold** (CVaR-VQE), and a classical simulation inspired by **QFold**'s quantum-walk Metropolis algorithm. 3D output from any of these can be exported to OpenUSD (`uag_exporter.py`) for NVIDIA Omniverse / NanoVer VR / Unreal / Unity.
 
 | Distribution | Tools out-of-the-box | Extras |
 |---|---|---|
@@ -97,10 +97,10 @@ npx -y @smithery/cli install protein-design-mcp --client claude
 ### 3. pip + Manual Config
 
 ```bash
-pip install protein-design-mcp                      # Core CPU (10 tools)
-pip install "protein-design-mcp[gpu]"               # + PyTorch + ESM (13 tools)
-pip install "protein-design-mcp[gpu,rosetta]"       # + PyRosetta (17 tools) *
-pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (19 of 21 tools -- ZairaChem's 2 tools need a separate conda env, see below) **
+pip install protein-design-mcp                      # Core CPU (11 tools -- includes predict_structure_quantum_walk, no extra deps)
+pip install "protein-design-mcp[gpu]"               # + PyTorch + ESM (14 tools)
+pip install "protein-design-mcp[gpu,rosetta]"       # + PyRosetta (18 tools) *
+pip install "protein-design-mcp[gpu,rosetta,boltz]" # + Boltz-2 (20 of 24 tools -- ZairaChem's 3 tools and predict_peptide_quantum_vqe need separate envs, see below) **
 ```
 
 \* PyRosetta requires a [free academic license](https://www.pyrosetta.org/downloads). The `[rosetta]` extra installs `pyrosetta-installer` which fetches the wheel after you accept the license.
@@ -182,7 +182,7 @@ docker run --rm -i \
   jeonghyeonkim8652/protein-design-mcp:latest
 ```
 
-CPU mode disables `design_binder`, `design_fold`, `generate_backbone` (RFdiffusion is GPU-only) → 10 tools available.
+CPU mode disables `design_binder`, `design_fold`, `generate_backbone` (RFdiffusion is GPU-only) → 11 tools available.
 
 #### MCP client config
 
@@ -280,7 +280,7 @@ After deploying, Modal prints your endpoint URL. Connect via the local proxy:
 }
 ```
 
-19 of 21 tools available (ZairaChem's 2 tools need its own separate conda environment, see below -- not part of this Modal image). Local PDB files are automatically sent to Modal.
+20 of 24 tools available (ZairaChem's 3 tools and `predict_peptide_quantum_vqe` need their own separate environments, see below -- not part of this Modal image). Local PDB files are automatically sent to Modal.
 
 ---
 
@@ -529,6 +529,34 @@ Train a new binary-classification QSAR model from labeled SMILES + activity data
 {"input_csv": "path/to/training_data.csv", "output_dir": "path/to/model_output", "cutoff": 6.5, "direction": "high"}
 ```
 
+#### `predict_admet_profile` (**optional**)
+
+Run ZairaChem's `predict` across every endpoint you've configured (solubility, toxicity, malaria/tuberculosis bioactivity via `ZAIRACHEM_MODEL_<ENDPOINT>` env vars, e.g. from the H3D Centre screening cascade) for a single SMILES, and return one combined profile. Endpoints with no configured model report `"status": "not_configured"` rather than a fabricated score.
+
+```json
+{"smiles": "CCO"}
+```
+
+### Quantum Peptide Folding & Spatial Digital Twin (**optional**, see [Optional Tools: QuPepFold](#optional-tools-qupepfold-quantum-peptide-folding))
+
+#### `predict_peptide_quantum_vqe` (**optional**)
+
+Estimate a low-energy peptide conformation with QuPepFold's CVaR-optimized Variational Quantum Eigensolver (Qiskit Aer / Amazon Braket / IonQ Aria-1). Best suited to short peptides (≲10 residues). If `qupepfold` isn't installed in the active environment, returns a structured `"status": "unavailable"` result instead of failing.
+
+```json
+{"sequence": "ACDEFGHIK", "alpha": 0.1, "shots": 1024}
+```
+
+#### `predict_structure_quantum_walk`
+
+Classical, quantum-walk-inspired torsion-angle (φ,ψ) Metropolis simulation, loosely modeled on QFold's continuous off-lattice algorithm, followed by NeRF backbone reconstruction. Returns a 3D N/CA/C coordinate tensor. Pure Python — no extra dependency, available in every install including core CPU.
+
+```json
+{"sequence": "ACDEFGHIK", "steps": 500, "continuous_space": true}
+```
+
+Feed the resulting `coordinates` (or Boltz-2's output, reshaped similarly) into `uag_exporter.export_to_openusd()` to get a `.usda` file for NVIDIA Omniverse, NanoVer VR, Unreal Engine 5, or Unity. Uses real `pxr`/`UsdGeom` if `usd-core` is installed (`pip install "protein-design-mcp[usd]"`); otherwise falls back to a hand-written, schema-valid ASCII `.usda` writer with no extra dependency.
+
 ### Utility
 
 #### `get_design_status`
@@ -588,11 +616,11 @@ Then point your MCP client at this venv's `protein-design-mcp` binary (or run tw
 }
 ```
 
-Your LLM will see all 19 of those tools through the two servers and call whichever is appropriate (add a third server entry pointing at a zairachem conda env's Python for the remaining 2 ZairaChem tools, following the same pattern).
+Your LLM will see all 20 of those tools through the two servers (includes `predict_structure_quantum_walk`, which needs no extra dependency) and call whichever is appropriate (add a third server entry pointing at a zairachem conda env's Python for the 3 ZairaChem tools, and a fourth pointing at a quantum venv for `predict_peptide_quantum_vqe`, following the same pattern -- see `claude_desktop_config.json` in the repo root for a complete 4-server example).
 
 ## Optional Tools: ZairaChem (bioactivity/QSAR prediction)
 
-`predict_bioactivity` and `train_qsar_model` wrap [ZairaChem](https://github.com/ersilia-os/zaira-chem), a published open-source AutoML QSAR/QSPR pipeline from the Ersilia Open Source Initiative (Turon, Hlozek, Woodland et al., "First fully-automated AI/ML virtual screening cascade implemented at a drug discovery centre in Africa," *Nature Communications* 14, 5736, 2023). ZairaChem was co-developed with and validated at the [H3D Centre](https://h3d.uct.ac.za/) (University of Cape Town) -- pretrained models from that malaria/tuberculosis screening cascade are published separately at [ersilia-os/h3d-screening-cascade-models](https://github.com/ersilia-os/h3d-screening-cascade-models) and can be used directly with `predict_bioactivity` with no retraining needed.
+`predict_bioactivity`, `train_qsar_model`, and `predict_admet_profile` wrap [ZairaChem](https://github.com/ersilia-os/zaira-chem), a published open-source AutoML QSAR/QSPR pipeline from the Ersilia Open Source Initiative (Turon, Hlozek, Woodland et al., "First fully-automated AI/ML virtual screening cascade implemented at a drug discovery centre in Africa," *Nature Communications* 14, 5736, 2023). ZairaChem was co-developed with and validated at the [H3D Centre](https://h3d.uct.ac.za/) (University of Cape Town) -- pretrained models from that malaria/tuberculosis screening cascade are published separately at [ersilia-os/h3d-screening-cascade-models](https://github.com/ersilia-os/h3d-screening-cascade-models) and can be used directly with `predict_bioactivity`/`predict_admet_profile` with no retraining needed.
 
 **Not included in the Docker image** for the same class of reason as PyRosetta/Boltz-2: ZairaChem is a heavy, conda-orchestrated, multi-environment AutoML stack (it also depends on the separately-installed Ersilia Model Hub CLI for descriptor calculation, which itself needs Docker or Singularity for most descriptor models) -- not something that fits cleanly into a single pip extra or a shared container alongside RFdiffusion's pinned torch stack.
 
@@ -615,6 +643,39 @@ Then point a separate MCP server instance at this conda environment's Python (sa
 - **`predict_bioactivity` needs an existing model** -- either one you trained with `train_qsar_model`, or a pretrained one (e.g. download an H3D screening-cascade model for a malaria/TB-relevant endpoint and point `model_dir` at it directly).
 - Natural pipeline position: score candidate molecules from `design_binder`/`design_fold`/an external molecule-generation step (e.g. qFoldIT's `genmol` skill) for predicted bioactivity *before* committing to expensive downstream validation (docking, synthesis).
 - Descriptor calculation (especially GROVER embeddings) can be slow on first run or CPU-only setups -- both new tools default to a generous 4-hour subprocess timeout, configurable via `ZairaChemConfig.timeout_seconds` in `pipelines/zairachem_runner.py`.
+
+## Optional Tools: QuPepFold (quantum peptide folding)
+
+`predict_peptide_quantum_vqe` wraps **QuPepFold**, a published Python package for CVaR-tuned Variational Quantum Eigensolver peptide conformational sampling (Uttarkar, Niranjan, Saxena, Kumar, "QuPepFold: A python package for hybrid quantum-classical protein folding simulations with CVaR-optimized VQE," *PLOS ONE*, 2026, [doi:10.1371/journal.pone.0342012](https://doi.org/10.1371/journal.pone.0342012)), runnable on Qiskit Aer, Amazon Braket's tensor-network simulator, or IonQ Aria-1 hardware. No official package repository URL was independently verified for this addition -- install from PyPI (`pip install qupepfold`) if available, or from the paper's own supplementary materials/links, and confirm the source before pinning a version in production.
+
+**Not included in any bundled image** for the same class of reason as PyRosetta/Boltz-2: Qiskit + Amazon Braket SDK + `qupepfold` is a large, independent dependency stack best kept in its own venv.
+
+### Installing the quantum stack
+
+```bash
+python -m venv ~/.venvs/protein-design-quantum
+source ~/.venvs/protein-design-quantum/bin/activate
+pip install "protein-design-mcp[quantum]"
+```
+
+Then point a separate MCP server instance at this venv's Python -- see `claude_desktop_config.json` in the repo root for a worked 4-environment example (core / boltz / zairachem / quantum), or the "Configuring two MCP servers side-by-side" pattern above.
+
+### Usage notes
+
+- **Best suited to short peptides** (≲10 residues) -- matches the published benchmark range where CVaR-VQE reliably reaches the ground state.
+- **Never crashes the server if unavailable**: if `qupepfold` isn't importable, `predict_peptide_quantum_vqe` returns `{"status": "unavailable", "install_hint": ...}` instead of raising.
+- `predict_structure_quantum_walk` (the classical, quantum-walk-*inspired* Metropolis simulation + NeRF backbone builder) needs **no** extra dependency and is available in every install, including the base `pip install protein-design-mcp`. See `pipelines/quantum_runner.py`'s module docstring for exactly what it does and doesn't reproduce from the real QFold quantum-walk algorithm.
+- QuPepFold's exact importable Python API (class/function names) was not independently re-verified against an installed copy of the package when this wrapper was written -- see `_run_qupepfold_job` in `pipelines/quantum_runner.py` before relying on it in production.
+
+## Spatial Digital Twin Export (OpenUSD)
+
+`uag_exporter.export_to_openusd(atom_coordinates, output_path)` converts any 3D atom-coordinate list produced by this server (Boltz-2, `predict_structure_quantum_walk`, RFdiffusion, etc. -- anything shaped as a list of `{atom, element, x, y, z, residue_index}` dicts) into a `.usda` OpenUSD scene, for live sync with NVIDIA Omniverse, NanoVer VR, Unreal Engine 5, or Unity.
+
+```bash
+pip install "protein-design-mcp[usd]"   # optional -- enables the real pxr/UsdGeom path
+```
+
+Without `usd-core` installed, the same function still works via a hand-written, schema-valid ASCII `.usda` fallback (no extra dependency) -- you lose time-sampling/composition-arc support, but get a working file either way.
 
 ## Configuration
 
@@ -656,6 +717,14 @@ MCP Server (stdio)
  +-- Bioactivity / QSAR (ZairaChem)
  |    +-- predict_bioactivity     Score molecules against a trained/pretrained model
  |    +-- train_qsar_model        Train a new binary-classification QSAR model
+ |    +-- predict_admet_profile   Multi-endpoint ZairaChem orchestration (solubility/toxicity/bioactivity)
+ |
+ +-- Quantum peptide folding
+ |    +-- predict_peptide_quantum_vqe     QuPepFold CVaR-VQE (Qiskit/Braket)
+ |    +-- predict_structure_quantum_walk  Classical quantum-walk-inspired Metropolis + NeRF
+ |
+ +-- Spatial digital twin export
+ |    +-- uag_exporter.export_to_openusd  Atom coordinates -> OpenUSD (.usda)
  |
  +-- Analysis tools
  |    +-- analyze_interface   PDB geometry analysis
@@ -697,4 +766,8 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 - [PyRosetta](https://www.pyrosetta.org/) - Physics-based protein modeling
 - [OpenMM](https://github.com/openmm/openmm) - Molecular dynamics and energy minimization
 - [ZairaChem](https://github.com/ersilia-os/zaira-chem) - AutoML QSAR/bioactivity prediction (Turon, Hlozek, Woodland et al., "First fully-automated AI/ML virtual screening cascade implemented at a drug discovery centre in Africa," *Nature Communications* 14, 5736, 2023, https://doi.org/10.1038/s41467-023-41512-2)
-- [H3D Centre screening cascade models](https://github.com/ersilia-os/h3d-screening-cascade-models) - Pretrained ZairaChem models usable directly with `predict_bioactivity`
+- [H3D Centre screening cascade models](https://github.com/ersilia-os/h3d-screening-cascade-models) - Pretrained ZairaChem models usable directly with `predict_bioactivity` / `predict_admet_profile`
+- QuPepFold - CVaR-optimized VQE peptide folding (Uttarkar, Niranjan, Saxena, Kumar, *PLOS ONE*, 2026, https://doi.org/10.1371/journal.pone.0342012)
+- QFold - Quantum-walk Metropolis protein folding (Casares, Campos, Martin-Delgado, "QFold: quantum walks and deep learning to solve protein folding," *Quantum Science and Technology* 7, 025013, 2022, https://doi.org/10.1088/2058-9565/ac4f2f, arXiv:2101.10279) -- classical inspiration only for `predict_structure_quantum_walk`, see that tool's own scope note
+- [OpenUSD](https://openusd.org/) - Scene description format used by `uag_exporter.py` for spatial digital-twin export (NVIDIA Omniverse, NanoVer VR, Unreal Engine 5, Unity)
+- Full citation metadata, including software/consortium references: see [CITATION.cff](CITATION.cff)
