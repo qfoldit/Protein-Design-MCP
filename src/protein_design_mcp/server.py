@@ -627,6 +627,72 @@ TOOLS = [
             "required": ["sequences"],
         },
     ),
+    Tool(
+        name="predict_bioactivity",
+        description=(
+            "Predict bioactivity/property class for candidate molecules using ZairaChem "
+            "(Ersilia Open Source Initiative's published AutoML QSAR pipeline, Turon/Hlozek "
+            "et al. 2023, Nat Commun 14:5736). Scores molecules against an EXISTING trained "
+            "model -- your own, or a published pretrained one such as the H3D Centre's "
+            "malaria/tuberculosis screening cascade models. Requires the zairachem CLI "
+            "installed separately (conda, not pip) -- see NOTICE/README for setup."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "input_csv": {
+                    "type": "string",
+                    "description": "Path to a CSV of candidate molecules (SMILES column) to score",
+                },
+                "model_dir": {
+                    "type": "string",
+                    "description": "Path to a trained ZairaChem model directory (yours or a pretrained one)",
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Directory ZairaChem will write predictions into",
+                },
+            },
+            "required": ["input_csv", "model_dir", "output_dir"],
+        },
+    ),
+    Tool(
+        name="train_qsar_model",
+        description=(
+            "Train a new binary-classification bioactivity/property QSAR model using "
+            "ZairaChem (Ersilia Open Source Initiative's published AutoML QSAR pipeline). "
+            "Classification only (not regression) -- supply cutoff+direction to binarize a "
+            "continuous assay column, or pre-binarize your data. Requires the zairachem CLI "
+            "installed separately (conda, not pip) -- see NOTICE/README for setup."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "input_csv": {
+                    "type": "string",
+                    "description": "Path to a CSV with a SMILES column and an activity column",
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Directory ZairaChem will write the trained model into",
+                },
+                "cutoff": {
+                    "type": "number",
+                    "description": "Activity cutoff for binarizing a continuous column (omit if already 0/1)",
+                },
+                "direction": {
+                    "type": "string",
+                    "enum": ["high", "low"],
+                    "description": "Which side of cutoff counts as 'active' -- required if cutoff is given",
+                },
+                "parameters_file": {
+                    "type": "string",
+                    "description": "Optional path to a ZairaChem parameters.json for custom descriptor selection",
+                },
+            },
+            "required": ["input_csv", "output_dir"],
+        },
+    ),
 ]
 
 
@@ -698,6 +764,10 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             result = await handle_predict_structure_boltz(arguments)
         elif name == "predict_affinity_boltz":
             result = await handle_predict_affinity_boltz(arguments)
+        elif name == "predict_bioactivity":
+            result = await handle_predict_bioactivity(arguments)
+        elif name == "train_qsar_model":
+            result = await handle_train_qsar_model(arguments)
         else:
             result = {"error": f"Unknown tool: {name}"}
 
@@ -1132,6 +1202,43 @@ async def handle_predict_affinity_boltz(arguments: dict[str, Any]) -> dict[str, 
     return await runner.predict_affinity(
         sequences=sequences,
         model=arguments.get("model", "boltz2"),
+    )
+
+
+async def handle_predict_bioactivity(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle predict_bioactivity tool call (ZairaChem)."""
+    from protein_design_mcp.tools.predict_bioactivity import predict_bioactivity
+
+    input_csv = arguments.get("input_csv")
+    model_dir = arguments.get("model_dir")
+    output_dir = arguments.get("output_dir")
+    if not input_csv:
+        return {"error": "input_csv is required"}
+    if not model_dir:
+        return {"error": "model_dir is required"}
+    if not output_dir:
+        return {"error": "output_dir is required"}
+
+    return await predict_bioactivity(input_csv=input_csv, model_dir=model_dir, output_dir=output_dir)
+
+
+async def handle_train_qsar_model(arguments: dict[str, Any]) -> dict[str, Any]:
+    """Handle train_qsar_model tool call (ZairaChem)."""
+    from protein_design_mcp.tools.train_qsar_model import train_qsar_model
+
+    input_csv = arguments.get("input_csv")
+    output_dir = arguments.get("output_dir")
+    if not input_csv:
+        return {"error": "input_csv is required"}
+    if not output_dir:
+        return {"error": "output_dir is required"}
+
+    return await train_qsar_model(
+        input_csv=input_csv,
+        output_dir=output_dir,
+        cutoff=arguments.get("cutoff"),
+        direction=arguments.get("direction"),
+        parameters_file=arguments.get("parameters_file"),
     )
 
 
