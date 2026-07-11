@@ -39,7 +39,7 @@ An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to
 | Distribution | Tools out-of-the-box | Extras |
 |---|---|---|
 | `pip install "protein-design-mcp[gpu]"` | 13 core tools | `[rosetta]` (license required), `[boltz]` (isolated venv) |
-| `docker pull jeonghyeonkim8652/protein-design-mcp` | 13 core tools (GPU), 10 (CPU) | PyRosetta / Boltz not bundled (license + torch conflict) |
+| `docker pull qfoldit/Protein-Design-MCP` | 13 core tools (GPU), 10 (CPU) | PyRosetta / Boltz not bundled (license + torch conflict) |
 
 The 6 non-bundled tools (`rosetta_*` x4, `predict_*_boltz` x2) install cleanly via pip extras — see [Optional Tools](#optional-tools-pyrosetta--boltz-2).
 
