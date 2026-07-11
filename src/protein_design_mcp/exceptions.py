@@ -65,6 +65,21 @@ class ZairaChemError(PipelineError):
     pass
 
 
+class QuantumBackendError(PipelineError):
+    """Raised when a quantum-computing backend (qupepfold/Qiskit/Braket)
+    is present but fails during execution (bad circuit, backend
+    rejection, timeout, etc).
+
+    Deliberately NOT used for "the quantum venv/package isn't installed"
+    -- that case is handled as a normal, structured error dict (see
+    pipelines/quantum_runner.py) so the MCP dispatch loop never crashes
+    the server process just because an optional heavy dependency
+    (Qiskit / Amazon Braket / qupepfold) isn't present in the active venv.
+    """
+
+    pass
+
+
 class ValidationError(ProteinDesignError):
     """Raised when validation fails."""
 
