@@ -3,7 +3,7 @@
 **This repository has two parts under two different licenses — see `NOTICE` for full attribution.**
 
 1. **The MCP server** (this directory, outside `claude-skills/`) — Apache-2.0, based on [jasonkim8652/protein-design-mcp](https://github.com/jasonkim8652/protein-design-mcp). Currently unmodified from upstream; installation below correctly points to the upstream project's own PyPI/Docker/GitHub since qFoldIT has not yet published an independent build.
-2. **`claude-skills/`** — MIT, originally authored by qFoldIT: 20 Claude Skills covering scientific simulation (VQE, protein folding, bio-mining, corrosion, plant growth...) and digital-twin engine adapters (Unreal, Unity, Unigine, Omniverse, Apple, Three.js). See `claude-skills/README.md`.
+2. **`claude-skills/`** — MIT, originally authored by qFoldIT: 21 Claude Skills covering scientific simulation (VQE, protein folding, bio-mining, corrosion, plant growth...) and digital-twin engine adapters (Unreal, Unity, Unigine, Omniverse, Apple, Three.js). See `claude-skills/README.md`.
 
 Actual current directory layout (server portion; run `tree claude-skills/` separately for the skills side):
 
@@ -39,7 +39,7 @@ An [MCP](https://modelcontextprotocol.io) server that gives LLM agents access to
 | Distribution | Tools out-of-the-box | Extras |
 |---|---|---|
 | `pip install "protein-design-mcp[gpu]"` | 13 core tools | `[rosetta]` (license required), `[boltz]` (isolated venv) |
-| `docker pull qfoldit/Protein-Design-MCP` | 13 core tools (GPU), 10 (CPU) | PyRosetta / Boltz not bundled (license + torch conflict) |
+| `docker pull jeonghyeonkim8652/protein-design-mcp` | 13 core tools (GPU), 10 (CPU) | PyRosetta / Boltz not bundled (license + torch conflict) |
 
 The 6 non-bundled tools (`rosetta_*` x4, `predict_*_boltz` x2) install cleanly via pip extras — see [Optional Tools](#optional-tools-pyrosetta--boltz-2).
 
