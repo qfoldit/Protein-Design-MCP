@@ -1,0 +1,111 @@
+qFoldIT Protein-Design-MCP
+===========================
+
+This repository's root-level MCP server (everything outside `claude-skills/`)
+is based on:
+
+    protein-design-mcp
+    https://github.com/jasonkim8652/protein-design-mcp
+    Copyright (c) the original project authors
+    Licensed under the Apache License, Version 2.0
+
+qFoldIT distributes this code under the terms of the Apache License 2.0
+(see LICENSE). As of this notice, the server code (src/, tests/, Dockerfiles,
+pyproject.toml) is substantially unmodified from upstream, WITH ONE
+DOCUMENTED EXCEPTION (below) -- installation instructions in README.md
+still correctly point to the upstream project's own PyPI package,
+container registry, and source repository for everything else, since
+qFoldIT has not yet published its own independently maintained build.
+
+MODIFICATION (per Apache License 2.0 Section 4(b)): qFoldIT added
+ZairaChem AutoML QSAR/bioactivity prediction support:
+  - src/protein_design_mcp/pipelines/zairachem_runner.py (new file)
+  - src/protein_design_mcp/tools/predict_bioactivity.py (new file)
+  - src/protein_design_mcp/tools/train_qsar_model.py (new file)
+  - src/protein_design_mcp/exceptions.py (added ZairaChemError)
+  - src/protein_design_mcp/tools/__init__.py (documented the new
+    lazily-imported tools alongside the existing rosetta_*/*_boltz ones)
+  - src/protein_design_mcp/server.py (added predict_bioactivity and
+    train_qsar_model Tool schemas, dispatch, and handlers)
+These wrap the separately-installed, independently-licensed `zairachem`
+CLI (Ersilia Open Source Initiative -- see
+https://github.com/ersilia-os/zaira-chem for its own license terms,
+which are NOT superseded or altered by qFoldIT's Apache-2.0 wrapper
+code calling it as an external subprocess). Ersilia's main model-hub
+repository is GPL-3.0-licensed; zaira-chem's own LICENSE file was not
+directly inspected during this addition, so don't assume it's
+necessarily the same terms without checking. ZairaChem itself is not
+vendored or redistributed by this repository -- confirmed real CLI
+flags used here (`fit -i ... -m ...`, `predict -i ... -m ... -o ...`)
+match Ersilia's own published usage examples.
+
+NOTE ON UPSTREAM ATTRIBUTION: this NOTICE's claim that the pre-existing
+server code derives from https://github.com/jasonkim8652/protein-design-mcp
+was not independently re-verified via web search when this ZairaChem
+addition was made (the search used did not surface that specific
+repository, though that alone doesn't establish it doesn't exist --
+small individual repositories are often poorly indexed). If preparing
+this repository for external review (e.g. a grant committee), verify
+this upstream attribution independently before relying on it.
+
+MODIFICATION (per Apache License 2.0 Section 4(b)): a later addition
+integrated quantum-computing peptide-folding tools, a spatial/OpenUSD
+export layer, and a multi-endpoint ADMET orchestration tool:
+  - src/protein_design_mcp/pipelines/quantum_runner.py (new file) --
+    QuPepFold CVaR-VQE wrapper (import-guarded, never crashes the
+    server if `qupepfold`/Qiskit/Braket aren't installed) plus a
+    CLASSICAL quantum-walk-inspired torsion-angle Metropolis simulation
+    with NeRF backbone construction. See that file's module docstring
+    for exactly what is/isn't a faithful reproduction of the QFold and
+    QuPepFold papers (both cited in CITATION.cff) -- in particular, the
+    quantum-walk tool does NOT run an actual quantum circuit simulation.
+  - src/protein_design_mcp/tools/predict_peptide_quantum_vqe.py,
+    predict_structure_quantum_walk.py, predict_admet_profile.py (new
+    files) -- thin MCP tool wrappers, same one-tool-per-file convention
+    as the existing predict_bioactivity.py/train_qsar_model.py.
+  - src/protein_design_mcp/uag_exporter.py (new file) -- converts atom
+    coordinate lists (from Boltz-2, the quantum-walk simulation, or
+    elsewhere) into OpenUSD .usda files, for NVIDIA Omniverse/NanoVer/
+    Unreal/Unity consumption. Uses real `pxr` USD bindings if
+    `usd-core` is installed; otherwise falls back to a hand-written,
+    schema-valid ASCII .usda writer with no extra dependency.
+  - src/protein_design_mcp/exceptions.py (added QuantumBackendError)
+  - src/protein_design_mcp/server.py (added predict_peptide_quantum_vqe,
+    predict_structure_quantum_walk, and predict_admet_profile Tool
+    schemas, dispatch, and handlers)
+  - README.md (documented the 3 new tools under "Available Tools",
+    added "Optional Tools: QuPepFold" and "Spatial Digital Twin Export
+    (OpenUSD)" sections, updated the architecture diagram, updated all
+    tool-count references from 21 to 24 total, and added QuPepFold/
+    QFold/OpenUSD entries to "References")
+  - pyproject.toml (added `quantum` and `usd` optional-dependency
+    extras; documentation only, same as the existing `zairachem` extra
+    -- qupepfold's exact PyPI availability/version was not
+    independently reverified when this extra was added)
+  - claude_desktop_config.json (new file, repo root) -- example config
+    for running this server across 4 dependency-isolated venvs. See
+    that file's own `_comment_*` fields for a correction made relative
+    to a naive per-capability-server design: this repo has one server
+    module (server.py), not separate boltz_server.py/quantum_server.py
+    modules, and ZairaChem has no `mcp-serve` subcommand of its own.
+  - CITATION.cff (new file, repo root) -- includes a software citation
+    for qfoldit/Virtual-Lab-Simulation (Neil Voss), added once its
+    repository was independently confirmed by direct fetch on
+    2026-07-11. Not currently wrapped or vendored by this codebase --
+    listed for attribution/context only.
+predict_admet_profile additionally depends on one or more
+ZAIRACHEM_MODEL_<ENDPOINT> environment variables pointing at trained/
+pretrained ZairaChem model directories; endpoints with no configured
+model are reported as "not_configured", never given a fabricated score.
+
+---
+
+The `claude-skills/` subdirectory is a SEPARATE body of work, originally
+authored by qFoldIT, distributed under the MIT License (see
+claude-skills/LICENSE) -- NOT the Apache-2.0 terms above. One skill within
+it, `claude-skills/skills/nanover/`, is in turn a thin adapter around
+NanoVer (https://github.com/IRL2/nanover-server-py), an independently
+developed and MIT-licensed project by the Intangible Realities Laboratory
+(IRL2). See `claude-skills/skills/nanover/README.md` for required citation
+information -- any use of that skill's output must cite the publications
+listed there.

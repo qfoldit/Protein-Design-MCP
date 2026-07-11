@@ -1,0 +1,166 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it as below. If you use one of
+  the specific third-party models/algorithms it wraps (QuPepFold,
+  QFold, ZairaChem, Boltz-2, RFdiffusion, etc.), please ALSO cite that
+  work directly using the entries under `references` below, or the
+  citation given in that model's own repository.
+title: "qFoldIT Protein-Design-MCP"
+version: "0.2.0"
+date-released: 2026-07-11
+url: "https://github.com/qfoldit/Protein-Design-MCP"
+repository-code: "https://github.com/qfoldit/Protein-Design-MCP"
+license: Apache-2.0
+type: software
+authors:
+  - name: "qFoldIT"
+    # Individual contributor/consortium-member names are added here
+    # only with their explicit, on-record consent (see CONTRIBUTING.md
+    # and claude-skills/CONTRIBUTING.md for this repo's existing
+    # policy). This file does not list named individuals who have not
+    # confirmed they wish to be credited in this exact role, so no
+    # personal names are included here -- add them once confirmed.
+references:
+  - type: article
+    title: >-
+      QuPepFold: A python package for hybrid quantum-classical protein
+      folding simulations with CVaR-optimized VQE
+    authors:
+      - name: "Akshay Uttarkar"
+      - name: "Vidya Niranjan"
+      - name: "Amit Saxena"
+      - name: "Vinay Kumar"
+    journal: "PLOS ONE"
+    year: 2026
+    month: 2
+    identifiers:
+      - type: doi
+        value: "10.1371/journal.pone.0342012"
+    notes: >-
+      CVaR-VQE peptide folding basis for
+      src/protein_design_mcp/pipelines/quantum_runner.py's
+      predict_peptide_quantum_vqe / QuPepFoldRunner. NOTE: this
+      wrapper's exact call signature into the qupepfold package was
+      written from this paper's abstract-level description only and
+      was not independently verified against the installed package's
+      Python API -- see the module docstring before relying on it.
+  - type: article
+    title: "QFold: quantum walks and deep learning to solve protein folding"
+    authors:
+      - name: "P. A. M. Casares"
+      - name: "Roberto Campos"
+      - name: "M. A. Martin-Delgado"
+    journal: "Quantum Science and Technology"
+    volume: 7
+    issue: 2
+    pages: "025013"
+    year: 2022
+    identifiers:
+      - type: doi
+        value: "10.1088/2058-9565/ac4f2f"
+      - type: other
+        value: "arXiv:2101.10279"
+    notes: >-
+      Original continuous off-lattice, torsion-angle quantum-walk
+      Metropolis methodology that
+      src/protein_design_mcp/pipelines/quantum_runner.py's
+      simulate_quantum_walk_fold takes classical inspiration from. That
+      function is an explicitly-documented CLASSICAL approximation of
+      this paper's quantum-walk metaphor (a biased random walk driving
+      a real Metropolis acceptance step, not a quantum circuit
+      simulation) -- see that module's docstring for the full scope
+      note. It does not reproduce this paper's IBMQ Casablanca
+      hardware results.
+  - type: article
+    title: >-
+      Hybrid organic-inorganic structures trigger the formation of
+      primitive cell-like compartments
+    authors:
+      - name: "Silvia Holler"
+      - name: "Stuart Bartlett"
+      - name: "Richard J. G. Löffler"
+      - name: "Federica Casiraghi"
+      - name: "Claro Ignacio Sainz Diaz"
+      - name: "Julyan H. E. Cartwright"
+      - name: "Martin M. Hanczyc"
+    journal: "Proceedings of the National Academy of Sciences"
+    volume: 120
+    issue: 33
+    pages: "e2300491120"
+    year: 2023
+    identifiers:
+      - type: doi
+        value: "10.1073/pnas.2300491120"
+    notes: >-
+      Included per this repository's stated multi-paradigm scope
+      (spatial/protocell digital-twin context for OpenUSD/NanoVer
+      export). Not currently wrapped by any specific tool in this
+      codebase -- listed for attribution/context only, at the
+      requester's direction.
+  - type: article
+    title: >-
+      First fully-automated AI/ML virtual screening cascade implemented
+      at a drug discovery centre in Africa
+    authors:
+      - name: "Gemma Turon"
+      - name: "Jason Hlozek"
+      - name: "John G. Woodland"
+      - name: "Ankur Kumar"
+      - name: "Kelly Chibale"
+      - name: "Miquel Duran-Frigola"
+    journal: "Nature Communications"
+    volume: 14
+    pages: "5736"
+    year: 2023
+    identifiers:
+      - type: doi
+        value: "10.1038/s41467-023-41512-2"
+    notes: >-
+      ZairaChem AutoML QSAR tool, co-developed with and validated at
+      the H3D Centre (University of Cape Town). Wrapped by
+      pipelines/zairachem_runner.py, tools/predict_bioactivity.py,
+      tools/train_qsar_model.py, and tools/predict_admet_profile.py.
+      Pretrained malaria/tuberculosis screening-cascade models:
+      https://github.com/ersilia-os/h3d-screening-cascade-models
+  - type: software
+    title: "Boltz-2"
+    notes: >-
+      Structure/affinity prediction wrapped by
+      pipelines/boltz_runner.py, tools/boltz_predict.py -- see that
+      project's own repository (https://github.com/jwohlwend/boltz)
+      for its canonical citation, which was not re-verified here.
+  - type: software
+    title: "RFdiffusion"
+    notes: >-
+      Backbone generation wrapped by pipelines/rfdiffusion.py -- see
+      that project's own repository
+      (https://github.com/RosettaCommons/RFdiffusion) for its
+      canonical citation, which was not re-verified here.
+# -----------------------------------------------------------------------
+  - type: software
+    title: "Virtual-Lab-Simulation"
+    authors:
+      - name: "Neil Voss"
+    url: "https://github.com/qfoldit/Virtual-Lab-Simulation"
+    repository-code: "https://github.com/qfoldit/Virtual-Lab-Simulation"
+    license: "LGPL-3.0"
+    notes: >-
+      Browser-based virtual-lab protocol simulation engine (YAML
+      protocol authoring compiled to interactive TypeScript/SVG
+      simulations). Confirmed via direct repository fetch on
+      2026-07-11 -- "Maintained by Neil Voss". Non-code content is
+      separately CC-BY-4.0 licensed (see the repository's own
+      LICENSE.CC_BY_4_0). Not currently wrapped or vendored by any tool
+      in this codebase; listed for attribution/context at the
+      requester's direction. No associated journal article or DOI was
+      found for this work -- it is cited here as software, not as a
+      paper.
+# -----------------------------------------------------------------------
+# NOT INCLUDED, AND WHY:
+#
+# The "9 Owners' consortium" mentioned in a prior request for this file
+# is not reflected under `authors` above beyond the "qFoldIT" org name:
+# this file should not list named individuals without their confirmed,
+# on-record consent to be credited (see claude-skills/CITATION.cff's
+# existing comment to this same effect, and CONTRIBUTING.md).
+# -----------------------------------------------------------------------

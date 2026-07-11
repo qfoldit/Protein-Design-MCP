@@ -1,0 +1,42 @@
+{
+  "_comment_1": "Generic-placeholder MCP config for qFoldIT/Protein-Design-MCP's 4 dependency-isolated environments. Replace every '/path/to/*_venv' with a real virtualenv/conda path on your machine before use.",
+  "_comment_2": "WHY 4 SEPARATE ENVS: RFdiffusion pins torch==2.0.1, Boltz-2 needs torch>=2.2, ZairaChem is a conda-only AutoML stack (Mordred/GROVER/TabPFN/etc), and the quantum stack needs Qiskit + Amazon Braket SDK + qupepfold -- these pin conflicting/incompatible dependency versions and cannot coexist in one env. See pyproject.toml's [project.optional-dependencies] (gpu/boltz/zairachem/quantum) for exactly what to install in each.",
+  "_comment_3": "CORRECTION vs. a naive 4-server design: this repo's server.py is a SINGLE FastMCP-style entrypoint that lazily imports each optional dependency only when its tools are actually called (see tools/__init__.py's lazy-import docstring) -- there are no separate boltz_server.py/quantum_server.py modules, and ZairaChem does not ship its own 'mcp-serve' subcommand (it's a plain CLI, invoked as a subprocess by this repo's own pipelines/zairachem_runner.py). All four entries below therefore point at the same 'protein_design_mcp.server' module; isolation comes entirely from which venv's site-packages each entry's VIRTUAL_ENV points at, not from four different Python modules.",
+  "mcpServers": {
+    "qfoldit-mcp-core": {
+      "command": "python",
+      "args": ["-m", "protein_design_mcp.server"],
+      "env": {
+        "VIRTUAL_ENV": "/path/to/core_venv",
+        "DEVICE": "auto"
+      }
+    },
+    "qfoldit-mcp-boltz": {
+      "command": "python",
+      "args": ["-m", "protein_design_mcp.server"],
+      "env": {
+        "VIRTUAL_ENV": "/path/to/boltz_venv",
+        "DEVICE": "cuda",
+        "BOLTZ_CONDA_ENV": ""
+      }
+    },
+    "qfoldit-mcp-zairachem": {
+      "command": "python",
+      "args": ["-m", "protein_design_mcp.server"],
+      "env": {
+        "VIRTUAL_ENV": "/path/to/zairachem_env",
+        "ZAIRACHEM_MODEL_SOLUBILITY": "/path/to/zairachem_models/solubility",
+        "ZAIRACHEM_MODEL_TOXICITY": "/path/to/zairachem_models/toxicity",
+        "ZAIRACHEM_MODEL_MALARIA": "/path/to/h3d-screening-cascade-models/malaria",
+        "ZAIRACHEM_MODEL_TUBERCULOSIS": "/path/to/h3d-screening-cascade-models/tuberculosis"
+      }
+    },
+    "qfoldit-mcp-quantum": {
+      "command": "python",
+      "args": ["-m", "protein_design_mcp.server"],
+      "env": {
+        "VIRTUAL_ENV": "/path/to/quantum_venv"
+      }
+    }
+  }
+}
