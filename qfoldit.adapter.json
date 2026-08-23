@@ -1,0 +1,13 @@
+{
+  "spec": "qfoldit.engine-adapter/0.1",
+  "engine": {"id": "protein-design-mcp", "name": "qFoldIT Protein Design MCP"},
+  "adapter": {"id": "qfoldit-protein-design-mcp", "version": "0.1.0"},
+  "contracts": {"uag": "qfoldit.uag/0.1"},
+  "capabilities": [
+    {"id": "scene.graph", "level": "adapter", "status": "supported"},
+    {"id": "uag.validate", "level": "adapter", "status": "supported"},
+    {"id": "uag.apply", "level": "adapter", "status": "supported"},
+    {"id": "scientific.visualization", "level": "adapter", "status": "supported"}
+  ],
+  "notes": "Protein-design domain adapter. Candidate generation and scientific validation remain external/domain-owned; this adapter exposes qFoldIT contract-compatible operations."
+}
