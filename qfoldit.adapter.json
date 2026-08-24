@@ -1,13 +1,12 @@
 {
-  "spec": "qfoldit.engine-adapter/0.1",
-  "engine": {"id": "protein-design-mcp", "name": "qFoldIT Protein Design MCP"},
-  "adapter": {"id": "qfoldit-protein-design-mcp", "version": "0.1.0"},
-  "contracts": {"uag": "qfoldit.uag/0.1"},
+  "spec": "qfoldit.scientific-adapter/1.0",
+  "adapter": {"id": "qfoldit-protein-design-mcp", "version": "0.2.0", "domain": "protein-design"},
+  "scientific_engine": "Protein-Design-MCP",
   "capabilities": [
-    {"id": "scene.graph", "level": "adapter", "status": "supported"},
-    {"id": "uag.validate", "level": "adapter", "status": "supported"},
-    {"id": "uag.apply", "level": "adapter", "status": "supported"},
-    {"id": "scientific.visualization", "level": "adapter", "status": "supported"}
+    {"id":"scene.graph","domain":"protein-design","description":"Expose protein-design scene graph operations through qFoldIT canonical contracts.","input_schemas":["qfoldit.scientific.object/1.0","qfoldit.uag/0.1"],"output_schemas":["qfoldit.uag/0.1"],"validator_requirements":["openstructure"],"consequential":false},
+    {"id":"uag.validate","domain":"protein-design","description":"Validate a protein-design UAG representation before scientific execution.","input_schemas":["qfoldit.uag/0.1"],"output_schemas":["qfoldit.validation.completed/1.1"],"validator_requirements":["openstructure"],"consequential":false},
+    {"id":"uag.apply","domain":"protein-design","description":"Apply an authorized protein-design operation under mission-scoped governance.","input_schemas":["qfoldit.uag/0.1","qfoldit.scientific-action-envelope/1.0"],"output_schemas":["qfoldit.scientific-action-envelope/1.0"],"validator_requirements":["openstructure"],"consequential":true},
+    {"id":"scientific.visualization","domain":"protein-design","description":"Produce non-authoritative visualization representations of protein-design objects.","input_schemas":["qfoldit.scientific.object/1.0"],"output_schemas":["qfoldit.visualization/1.0"],"validator_requirements":[],"consequential":false}
   ],
-  "notes": "Protein-design domain adapter. Candidate generation and scientific validation remain external/domain-owned; this adapter exposes qFoldIT contract-compatible operations."
+  "provenance_uri": "qfoldit://adapter/protein-design-mcp/0.2.0"
 }
