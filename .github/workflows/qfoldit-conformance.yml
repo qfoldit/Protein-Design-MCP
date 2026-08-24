@@ -7,7 +7,19 @@ on:
 
 jobs:
   adapter:
-    uses: qfoldit/.github/.github/workflows/reusable-qfoldit-conformance.yml@main
-    with:
-      manifest_path: qfoldit.adapter.json
-      require_manifest: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout adapter repository
+        uses: actions/checkout@v4
+      - name: Checkout qFoldIT governance kit
+        uses: actions/checkout@v4
+        with:
+          repository: qfoldit/.github
+          path: .qfoldit-governance
+          ref: main
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate canonical scientific adapter manifest
+        run: python .qfoldit-governance/conformance/validate.py qfoldit.adapter.json
