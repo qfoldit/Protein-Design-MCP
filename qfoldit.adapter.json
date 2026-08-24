@@ -8,5 +8,6 @@
     {"id":"uag.apply","domain":"protein-design","description":"Apply an authorized protein-design operation under mission-scoped governance.","input_schemas":["qfoldit.uag/0.1","qfoldit.scientific-action-envelope/1.0"],"output_schemas":["qfoldit.scientific-action-envelope/1.0"],"validator_requirements":["openstructure"],"consequential":true},
     {"id":"scientific.visualization","domain":"protein-design","description":"Produce non-authoritative visualization representations of protein-design objects.","input_schemas":["qfoldit.scientific.object/1.0"],"output_schemas":["qfoldit.visualization/1.0"],"validator_requirements":[],"consequential":false}
   ],
-  "provenance_uri": "qfoldit://adapter/protein-design-mcp/0.2.0"
+  "provenance_uri": "qfoldit://adapter/protein-design-mcp/0.2.0",
+  "conformance": {"contract": "qfoldit.scientific-adapter/1.0", "governance": "qfoldit/.github@main"}
 }
